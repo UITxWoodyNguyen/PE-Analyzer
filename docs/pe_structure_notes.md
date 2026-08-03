@@ -91,6 +91,7 @@ NT Header hay `IMAGE_NT_HEADERS` là cấu trúc quan trọng nhất trong PE He
 Địa chỉ của `IMAGE_NT_HEADERS` được tính theo công thức:
 
 $$Address = BaseAddress + Offset$$
+
 Trong đó: $BaseAddress$ - địa chỉ gốc của file được lưu tại trường `e_lfanew`trong DOS Header
 
 Tuỳ vào kiến trúc PE32 hay PE32+ (tương ứng với tệp 32-bit hay 64-bit), cấu trúc này sẽ được định nghĩa theo cách khác nhau. Cụ thể:
