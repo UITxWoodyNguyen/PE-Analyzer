@@ -83,3 +83,86 @@ Trong đó có 2 trường mang giá trị quyết định với Windows OS hi�
 Giá trị `DWORD` cuối cùng trước điểm bắt đầu DOS Stub chứa những giá trị `00 01 00 00`. Để ý đến trật tự byte, điều này giúp ta biết `00 00 01 00h` là những offset nơi mà PE Header bắt đầu. PE Header bắt đầu với phần signatures của nó là `50h, 45h, 00h, 00h` (Các kí tự “PE” được đi kèm bới các giá trị tận cùng là 0)
 
 ![alt text](image-2.png)
+
+#### NT Header
+
+NT Header hay `IMAGE_NT_HEADERS` là cấu trúc quan trọng nhất trong PE Header, đóng vai trò như "bộ não" chứa toàn bộ thông tin vận hành cốt lõi mà Windows Loader cần để nạp một tệp thực thi vào bộ nhớ (RAM).
+
+Địa chỉ của `IMAGE_NT_HEADERS` được tính theo công thức:
+
+$$Address = BaseAddress + Offset$$
+Trong đó: $BaseAddress$ - địa chỉ gốc của file được lưu tại trường `e_lfanew`trong DOS Header
+
+Tuỳ vào kiến trúc PE32 hay PE32+ (tương ứng với tệp 32-bit hay 64-bit), cấu trúc này sẽ được định nghĩa theo cách khác nhau. Cụ thể:
+
+- Đối với `PE32`:
+    ```c++
+    typedef struct _IMAGE_NT_HEADERS {
+        DWORD Signature;                    // PE Signature ("PE\0\0")
+        IMAGE_FILE_HEADER FileHeader;       // Thông tin tổng quan file
+        IMAGE_OPTIONAL_HEADER32 OptionalHeader; // Thông tin nạp bộ nhớ & cấu trúc dữ liệu
+    } IMAGE_NT_HEADER32, *PIMAGE_NT_HEADER;
+    ```
+
+- Đối với `PE32+`:
+    ```c++
+    typedef struct _IMAGE_NT_HEADERS64 {
+        DWORD Signature;                    // PE Signature ("PE\0\0")
+        IMAGE_FILE_HEADER FileHeader;       // Thông tin tổng quan file
+        IMAGE_OPTIONAL_HEADER64 OptionalHeader; // Thông tin nạp bộ nhớ & cấu trúc dữ liệu
+    } IMAGE_NT_HEADERS64, *PIMAGE_NT_HEADERS64;
+    ```
+
+Trong đó:
+- 4 bytes `Signature` giữ giá trị cố định `0x00004550` (đổi sang ASCII text là `PE\0\0`) được dùng để xác định đây là một NT headers hợp lệ.
+- 20 bytes `FileHeader` dùng để chứa thông tin cấu hình vật lý của file, bao gồm:
+
+    ```c++
+    typedef struct _IMAGE_FILE_HEADER {
+        WORD Machine;
+        WORD NumberOfSections;
+        ULONG TimeDateStamp;
+        ULONG PointerToSymbolTable;
+        ULONG NumberOfSymbols;
+        WORD SizeOfOptionalHeader;
+        WORD Characteristics;
+    } IMAGE_FILE_HEADER, *PIMAGE_FILE_HEADER;
+    ```
+    
+    - `Machine`: Xác định kiến trúc phần cứng
+    - `NumberOfSections`: Số lượng các section (`.text`, `.data`, `.rsrc`...). Loader dùng thông tin này để biết có bao nhiêu Section Header ở ngay sau NT Header.
+    - `TimeDateStamp`: Đấu mốc thời gian file được biên dịch (Epoch time).
+    - `SizeOfOptionalHeader`: Kích thước của `OptionalHeader` đi ngay sau nó (thường là `0xE0` cho 32-bit và `0xF0` cho 64-bit).
+    - `Characteristics`: Cờ hiệu trạng thái file (VD: `0x0002` = Executable, `0x2000` = DLL file).
+
+- 224 bytes `OptionalHeader` chứa thông tin về Logic bên trong của PE file, đồng thời đây là phần quan trọng nhất quyết định cách data được nạp lên RAM
+
+    ![alt text](image-3.png)
+
+    - **AddressOfEntryPoint – RVA** (địa chỉ ảo tương đối) là khoảng cách (offset) từ địa chỉ nạp gốc (`ImageBase`) đến một vị trí dữ liệu hoặc lệnh trong RAM Memory. Nếu như muốn làm thay đổi luồng của thứ tự thực hiện, cần phải thay đổi lại giá trị trong trường này thành một RVA mới và do đó câu lệnh tại giá trị RVA mới này sẽ được thực thi đầu tiên. Công thức:
+
+    $$VA = ImageBase + RVA$$
+
+    - **ImageBase** (địa chỉ nạp được ưu tiên). Giá trị của address này là mặc định. Cụ thể, đối với tệp `.exe` 32-bit thường là `0x00400000`, 64-bit là `0x0000000140000000`. Với tệp `.dll` thường là `0x10000000`.
+
+        > Cơ chế ASLR (Address Space Layout Randomization): Nếu cờ bảo mật ASLR được bật (hoặc địa chỉ ImageBase bị xung đột với ứng dụng khác), Windows Loader sẽ nạp tệp vào một địa chỉ ảo ngẫu nhiên khác. Lúc này, hệ thống phải dựa vào bảng .reloc để tính toán lại địa chỉ thực tế.
+
+    - **SectionAlignment** (Độ căn chỉnh bộ nhớ ảo). Field này có nhiệm vụ quy định kích thước khối bộ nhớ tối thiểu khi từng Section được ánh xạ lên RAM.
+
+        - Giá trị phổ biến: `0x1000` bytes (4 KB) - đúng bằng kích thước 1 trang Memory Page trên kiến trúc `x86/64`
+        - Cơ chế: Nếu một Section có kích thước dữ liệu thực tế chỉ là 1.5 KB, Windows Loader vẫn phải cấp phát trọn vẹn 4 KB trên RAM cho Section đó. Phần dư thừa còn lại sẽ được chèn các byte trống (`0x00` - Padding). 
+
+    - **SizeOfImage** xác định tổng dung lượng bộ nhớ ảo (RAM) mà Windows Loader phải đặt trước (reserve) để chứa toàn bộ PE File (bao gồm cả Headers và tất cả các Sections). Công thức:
+
+    $$SizeOfImage = \sum (\text{Kích thước các Section đã căn chỉnh theo } SectionAlignment) + PE\_Header$$
+
+#### Data Directory
+**DataDirectory** là một mảng gồm 16 phần tử nằm ở cuối cấu trúc `IMAGE_OPTIONAL_HEADER`. Mỗi phần tử là một cấu trúc `IMAGE_DATA_DIRECTORY` gồm 8 bytes:
+
+```c++
+typedef struct _IMAGE_DATA_DIRECTORY {
+    DWORD VirtualAddress; // Địa chỉ RVA trỏ đến bảng dữ liệu
+    DWORD Size;           // Kích thước của bảng dữ liệu (bytes)
+} IMAGE_DATA_DIRECTORY, *PIMAGE_DATA_DIRECTORY;
+```
+
