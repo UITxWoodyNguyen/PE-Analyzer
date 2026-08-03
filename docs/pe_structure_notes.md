@@ -155,7 +155,7 @@ Trong đó:
 
     - **SizeOfImage** xác định tổng dung lượng bộ nhớ ảo (RAM) mà Windows Loader phải đặt trước (reserve) để chứa toàn bộ PE File (bao gồm cả Headers và tất cả các Sections). Công thức:
 
-    $$SizeOfImage = \sum (\text{Kích thước các Section đã căn chỉnh theo } SectionAlignment) + PE\_Header$$
+        $$SizeOfImage = \sum (\text{Kích thước các Section đã căn chỉnh theo } SectionAlignment) + PE\_Header$$
 
 #### Data Directory
 **DataDirectory** là một mảng gồm 16 phần tử nằm ở cuối cấu trúc `IMAGE_OPTIONAL_HEADER`. Mỗi phần tử là một cấu trúc `IMAGE_DATA_DIRECTORY` gồm 8 bytes:
