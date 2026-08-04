@@ -265,5 +265,75 @@ Cơ chế Import:
 ```
 
 ### Section Table
+**Section Table** (hay còn gọi là **Section Headers**) là mảng chứa thông tin quản lý toàn bộ các phân vùng dữ liệu (Sections) trong cấu trúc Portable Executable (PE) của hệ điều hành Windows. Nó nằm ngay sau PE Header (kế tiếp `IMAGE_OPTIONAL_HEADER`) và đóng vai trò như một "bản đồ" hướng dẫn Windows PE Loader nạp dữ liệu từ file trên đĩa vào bộ nhớ RAM.
+
+Mỗi section trong file được mô tả bởi một phần tử kiểu `IMAGE_SECTION_HEADER` có kích thước cố định là **40 bytes** (0x28 bytes). Số lượng phần tử trong Section Table được xác định chính xác bởi trường `NumberOfSections` trong `IMAGE_FILE_HEADER`.
+
+Cấu trúc này được định nghĩa như sau:
+```c++
+typedef struct _IMAGE_SECTION_HEADER {
+    BYTE  Name[IMAGE_SIZEOF_SHORT_NAME]; // 8 bytes: Tên section (UTF-8/ASCII)
+    union {
+        DWORD PhysicalAddress;
+        DWORD VirtualSize;               // Kích thước section khi nạp vào RAM
+    } Misc;
+    DWORD VirtualAddress;                // Địa chỉ RVA của section trên RAM
+    DWORD SizeOfRawData;                 // Kích thước section trên đĩa (Disk)
+    DWORD PointerToRawData;              // File Offset (vị trí section trên đĩa)
+    DWORD PointerToRelocations;          // Offset tới thông tin Relocation (COFF)
+    DWORD PointerToLinenumbers;          // Offset tới thông tin dòng mã nguồn (Debug)
+    WORD  NumberOfRelocations;           // Số lượng entry trong bàn Relocation
+    WORD  NumberOfLinenumbers;            // Số lượng dòng mã nguồn
+    DWORD Characteristics;               // Cờ thuộc tính (Read, Write, Execute,...)
+} IMAGE_SECTION_HEADER, *PIMAGE_SECTION_HEADER;
+```
+
+| Trường | Kích thước | Mô tả chi tiết |
+| --- | --- | --- |
+| **`Name`** | 8 Bytes | Chuỗi ASCII không bắt buộc có ký tự kết thúc `\0` nếu dùng đủ 8 ký tự. Tên thường bắt đầu bằng dấu chấm (ví dụ: `.text`, `.data`). |
+| **`VirtualSize`** | 4 Bytes | Kích thước thực tế của section khi nằm trên bộ nhớ RAM. Nếu `VirtualSize` lớn hơn `SizeOfRawData`, phần dung lượng chênh lệch sẽ được điền bằng byte `0x00` (thường thấy ở phần `.bss`). |
+| **`VirtualAddress`** | 4 Bytes | Địa chỉ ảo tương đối (**RVA - Relative Virtual Address**) nơi Windows Loader đặt section này trên RAM. Giá trị này luôn là bội số của `SectionAlignment`. |
+| **`SizeOfRawData`** | 4 Bytes | Dung lượng của section trên đĩa. Giá trị này được làm tròn theo cờ `FileAlignment` trong `IMAGE_OPTIONAL_HEADER`. |
+| **`PointerToRawData`** | 4 Bytes | Vị trí bắt đầu của section tính từ đầu file (`File Offset` / `RAW Offset`). |
+| **`Characteristics`** | 4 Bytes | Tập hợp các cờ bit xác định quyền truy cập (Read, Write, Execute) và bản chất của dữ liệu (Code, Uninitialized Data, Initialized Data). |
+
+#### Các flag `Characteristics` quan trọng trong PE file
+Giá trị 32-bit của `Characteristics` xác định hành vi của bộ nhớ do hệ điều hành quản lý:
+
+* **`IMAGE_SCN_CNT_CODE`** (`0x00000020`): Section chứa mã lệnh thi hành.
+* **`IMAGE_SCN_CNT_INITIALIZED_DATA`** (`0x00000040`): Section chứa dữ liệu đã khởi tạo.
+* **`IMAGE_SCN_CNT_UNINITIALIZED_DATA`** (`0x00000080`): Section chứa dữ liệu chưa khởi tạo.
+* **`IMAGE_SCN_MEM_EXECUTE`** (`0x20000000`): Cấp quyền thi hành (`Execute`) mã lệnh trong section.
+* **`IMAGE_SCN_MEM_READ`** (`0x40000000`): Cấp quyền đọc (`Read`) dữ liệu trong section.
+* **`IMAGE_SCN_MEM_WRITE`** (`0x80000000`): Cấp quyền ghi (`Write`) vào section.
 
 ### Section
+PE File Sections là những section chứa nội dung chính của file, bao gồm code, data, resource và những thông tin khác của file thực thi. Mỗi section có một Header và một body. Những Section Headers thì được chứa trong Section Table ta vừa phân tích nhưng những Section Bodies lại không có cấu trúc, chúng có thể được sắp xếp theo bất kì cách nào với điều kiện là Header được điều thông tin đầy đủ để có thể giải mã dữ liệu.
+
+Các Sections chuẩn phổ biến trong PE file:
+* **`.text`**: Chứa mã máy thi hành (Machine Code) của chương trình (`READ | EXECUTE`).
+* **`.data`**: Chứa các biến toàn cục và biến tĩnh đã được khởi tạo giá trị (`READ | WRITE`).
+* **`.rdata`**: Chứa dữ liệu chỉ đọc như hằng số, chuỗi ký tự cố định và bảng **Import Directory Table** (`READ`).
+* **`.bss`**: Chứa các biến toàn cục chưa được khởi tạo. Không chiếm không gian thực trên ổ đĩa (`SizeOfRawData = 0`).
+* **`.rsrc`**: Chứa tài nguyên đi kèm của ứng dụng như icon, hình ảnh, chuỗi đa ngôn ngữ, dialog.
+* **`.reloc`**: Bảng thông tin Base Relocation giúp chương trình chạy đúng khi không thể nạp vào đúng địa chỉ `ImageBase` mặc định (mecanism ASLR).
+* **`.idata` / `.edata**`: Lần lượt chứa thông tin các hàm Import (nhập từ DLL) và Export (xuất hàm ra bên ngoài).
+
+
+### Thuật toán chuyển đổi RVA sang File Offset (RAW)
+
+Trong quá trình phân tích tĩnh (Static Analysis) hoặc Reverse Engineering, việc chuyển đổi từ địa chỉ RVA trên RAM sang File Offset trên ổ đĩa là thao tác cốt lõi:
+
+1. Duyệt qua mảng Section Table để tìm section chứa địa chỉ RVA thỏa mãn:
+
+$$\text{VirtualAddress} \le \text{RVA} < \text{VirtualAddress} + \text{VirtualSize}$$
+
+
+2. Tính khoảng cách vị trí tương đối (**Delta**) trong section:
+
+$$\Delta = \text{RVA} - \text{VirtualAddress}$$
+
+
+3. Tính địa chỉ File Offset tương ứng trên đĩa:
+
+$$\text{RAW} = \text{PointerToRawData} + \Delta$$
