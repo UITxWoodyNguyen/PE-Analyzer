@@ -158,7 +158,7 @@ Trong đó:
         $$SizeOfImage = \sum (\text{Kích thước các Section đã căn chỉnh theo } SectionAlignment) + PE\_Header$$
 
 #### Data Directory
-**DataDirectory** là một mảng gồm 16 phần tử nằm ở cuối cấu trúc `IMAGE_OPTIONAL_HEADER`. Mỗi phần tử là một cấu trúc `IMAGE_DATA_DIRECTORY` gồm 8 bytes:
+**DataDirectory** là 128 bytes cuối cùng của **OptionalHeader**, và lần lượt là những thành phần cuối cùng của `IMAGE_NT_HEADERS`. Đây là một mảng của 16 cấu trúc `IMAGE_DATA_DIRECTORY` structures, mỗi 8 bytes thì mỗi phần lại có liên quan đến một CTDL trong PE File. Cấu trúc của Data Directory có 2 thành phần mà bao gồm thông tin về vị trí và kích thước của cấu trúc dữ liệu:
 
 ```c++
 typedef struct _IMAGE_DATA_DIRECTORY {
@@ -167,3 +167,103 @@ typedef struct _IMAGE_DATA_DIRECTORY {
 } IMAGE_DATA_DIRECTORY, *PIMAGE_DATA_DIRECTORY;
 ```
 
+- `VirtualAddress`: Địa chỉ ảo tương đối của cấu trúc (RVA)
+- `Size`: kích thước của CTDL (Tính theo bytes)
+
+16 directories mà cấu trúc này tham chiếu đến được định nghĩa trong `window.inc`, trong đó có 4 trường quan trọng:
+
+- `IMAGE_DIRECTORY_ENTRY_BASERELOC` - `DataDirectory[5]`: Base Relocation Table
+- `IMAGE_DIRECTORY_ENTRY_EXPORT` - `DataDirectory[0]`: Export Directory
+- `IMAGE_DIRECTORY_ENTRY_IAT` - `DataDirectory[12]`: Import Address Table
+- `IMAGE_DIRECTORY_ENTRY_IMPORT` - `DataDirectory[1]`: Import Directory
+
+Dưới đây là hình ảnh Hex View thực tế phân tích cấu trúc PE Header, bao gồm vùng chứa mảng Data Directories:
+
+![alt text](image-5.png)
+
+#### Import Directory
+
+![alt text](image-6.png)
+
+Import Directory là một mảng các cấu trúc `IMAGE_IMPORT_DESCRIPTOR`, trong đó mỗi phần tử tương ứng với một **DLL** mà PE File phụ thuộc (ví dụ: kernel32.dll, user32.dll).
+
+Kích thước của mỗi phần tử IID là **20 bytes**. Mảng này kết thúc bằng một phần tử rỗng (NULL Structure — tất cả các trường đều bằng 0).
+
+Cấu trúc `IMAGE_IMPORT_DESCRIPTOR` trong `winnt.h`:
+
+```c++
+typedef struct _IMAGE_IMPORT_DESCRIPTOR {
+    union {
+        DWORD   Characteristics;            // 0 for terminating null entry
+        DWORD   OriginalFirstThunk;         // RVA trỏ đến Import Name Table (INT)
+    } DUMMYUNIONNAME;
+    DWORD   TimeDateStamp;                  // 0 nếu không Bound Import; -1 nếu Bound
+    DWORD   ForwarderChain;                 // Index cho các hàm Forwarder
+    DWORD   Name;                           // RVA trỏ đến chuỗi ASCII chứa tên DLL
+    DWORD   FirstThunk;                     // RVA trỏ đến Import Address Table (IAT)
+} IMAGE_IMPORT_DESCRIPTOR, *PIMAGE_IMPORT_DESCRIPTOR;
+```
+
+Trong đó:
+
+- Trường `OriginalFirstThunk` (RVA): Trỏ tới **Import Name Table (INT)** hay còn được gọi là **Import Lookup Table (ILT)**. Đây là mảng các con trỏ thực hiện trở đến các hàm cần import.
+- Trường `Name` (RVA): Trỏ đến chuỗi ASCII kết thúc bằng byte `0` chứa tên của DLL
+- Trường `FirstThunk` (RVA): Trỏ tới **Import Address Table (IAT)**. Cụ thể:
+    - Trên ổ cứng (Disk): `FirstThunk` chứa dữ liệu song song và giống hệt `OriginalFirstThunk`
+    - Trên bộ nhớ (RAM): Sau khi Windows Loader nạp chương trình, các giá trị trong IAT tại `FirstThunk` sẽ bị ghi đè bằng địa chỉ ảo VA thực tế của các hàm API trong bộ nhớ.
+- `TimeDateStamp`: Nếu bằng `0`, DLL chưa được Bound. Nếu bằng `-1`, DLL đã được Bound trước (Bound Import).
+- `ForwarderChain`: Dùng khi hàm được forward từ DLL này sang DLL khác (hiếm khi phân tích thủ công).
+
+##### INT và IAT
+
+Cả **INT** và **IAT** đều là các con trỏ kiểu `IMAGE_THUNK_DATA` Mảng này được kết thúc bằng một phần tử `0` và có kích thước 4 bytes (đối với `PE32`) và 8 bytes (đối với `PE32+`):
+
+```c++
+typedef struct _IMAGE_THUNK_DATA32 {
+    union {
+        DWORD ForwarderString;      // PBYTE 
+        DWORD Function;             // PDWORD địa chỉ hàm (trên RAM)
+        DWORD Ordinal;              // Import theo Ordinal (chỉ số)
+        DWORD AddressOfData;        // RVA trỏ đến IMAGE_IMPORT_BY_NAME
+    } u1;
+} IMAGE_THUNK_DATA32;
+```
+
+Cơ chế Import:
+
+- **Import By Name**: Nếu bit MSB của Thunk Data là 0 thì giá trị đó là một RVA trỏ tới cấu trúc `IMAGE_IMPORT_BY_NAME`. Cấu trúc này được định nghĩa như sau:
+    ```c++
+    typedef struct _IMAGE_IMPORT_BY_NAME {
+        WORD    Hint;          // Chỉ số gợi ý trong Export Table của DLL
+        CHAR    Name[1];       // Chuỗi ASCII chứa tên hàm (kết thúc bằng NULL)
+    } IMAGE_IMPORT_BY_NAME, *PIMAGE_IMPORT_BY_NAME;
+    ```
+
+    - `Hint` (2 bytes): Chỉ số gợi ý vị trí của hàm trong Export Directory Table của DLL đích. Giúp Windows Loader tìm kiếm hàm nhanh hơn thay vì phải duyệt toàn bộ bảng tên.
+    - `Name`: Chuỗi ký tự ASCII kết thúc bằng `NULL` biểu diễn tên hàm
+- **Import By Ordinal**: Nếu bit MSB của Thunk Data là 1 thì hàm đó được import bằng số thứ tự (Ordinal). Giá trị Ordinal nằm ở các bit thấp.
+
+##### Tổng quan cơ chế Import Table
+
+![alt text](image-7.png)
+
+**Tóm tắt flow xử lý**
+```
+               ┌───────────────────────────────┐
+               │    IMAGE_THUNK_DATA Value     │
+               └───────────────┬───────────────┘
+                               │
+                       Bit MSB là 0 hay 1?
+                      /                 \
+            MSB = 0  /                   \  MSB = 1
+                    ▼                     ▼
+         [Import By Name]              [Import By Ordinal]
+        ----------------              --------------------
+        Giá trị là RVA trỏ             Các bit thấp chứa trực tiếp
+        tới cấu trúc                   mã số thứ tự (Ordinal) 
+        IMAGE_IMPORT_BY_NAME.          của hàm trong DLL.
+```
+
+### Section Table
+
+### Section
