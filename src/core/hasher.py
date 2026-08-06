@@ -20,6 +20,17 @@ class HashResult:
     md5_hash: str
     sha256_hash: str
 
+    def __getitem__(self, key: str):
+        if key == "md5":
+            return self.md5_hash
+        if key == "sha256":
+            return self.sha256_hash
+        if key == "file_size":
+            return self.size_bytes
+        if key == "path":
+            return self.path
+        raise KeyError(key)
+
 class HashError(Exception):
     pass
 

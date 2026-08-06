@@ -30,6 +30,10 @@ def pe_x86_exe():
 
     return exe_path
 
+@pytest.fixture
+def temp_path(tmp_path):
+    return tmp_path
+
 # Mutate byte of a valid PE file to create a corrupted PE file
 @pytest.fixture
 def truncated_byte(temp_path):
@@ -37,6 +41,10 @@ def truncated_byte(temp_path):
     p = temp_path / "1byte.exe"
     p.write_bytes(b'\x4D')  # Write only the first byte of a valid PE file (MZ header)
     return p
+
+@pytest.fixture
+def truncated_1byte(truncated_byte):
+    return truncated_byte
 
 @pytest.fixture
 def truncated_before_header(pe_x64_exe, temp_path):
@@ -65,6 +73,10 @@ def fake_pe_signature(pe_x64_exe, temp_path):
     return p
 
 @pytest.fixture
+def fake_MZ(fake_pe_signature):
+    return fake_pe_signature
+
+@pytest.fixture
 def fake_text_exe(temp_path):
     # Create a temporary file with a text file that has "MZ" at the beginning
     p = temp_path / "fake_text.exe"
@@ -77,3 +89,7 @@ def empty_exe(temp_path):
     p = temp_path / "empty.exe"
     p.write_bytes(b"")
     return p
+
+@pytest.fixture
+def non_existent_file(temp_path):
+    return temp_path / "does_not_exist.exe"
