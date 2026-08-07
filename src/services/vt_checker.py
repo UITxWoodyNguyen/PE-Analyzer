@@ -5,7 +5,8 @@ It provides functions to check the reputation of files, URLs, and IP address usi
 Usage: 
 '''
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Any, Dict, Optional
 import requests
 import os
 import re
@@ -35,12 +36,13 @@ class VTRequestErrors (VTErrors):
 # Dataclass for VT API response
 @dataclass
 class VTResult:
-    file_hash: str
-    malicious: int
-    total_engines: int
-    is_flagged: bool
-    file_type: str
-    permalink: str
+    file_hash: str  # The file hash (MD5 or SHA256) that was checked
+    malicious: int  # The number of engines that flagged the file as malicious
+    total_engines: int  # The total number of engines that analyzed the file
+    is_flagged: bool  # Indicates if the file is flagged as malicious
+    file_type: str  # The type of the file
+    permalink: str  # The permalink to the file's report on VirusTotal
+    engine_detections: Dict[str, Optional[str]] = field(default_factory = dict)
 
 # Helper function to interact with the VT API
 def get_API_key() -> str:
@@ -69,8 +71,59 @@ def _validate_hash (file_hash: str) -> bool:
 
     return clean_hash
 
+def parse_VT_response (data: Dict[str, Any], file_hash: str) -> VTResult:
+    '''
+    This function is used to parse the VT API response and extract relevant information,
+    Arguments:
+        - param data: The JSON response from the VT API.
+        - param file_hash: The file hash that was checked.
+
+    Process:
+        1. Extract the 'attributes' field from the response.
+        2. Extract the 'last_analysis_stats' field from the attributes.
+        3. Calculate the number of malicious detections and total engines.
+        4. Determine if the file is flagged as malicious.
+        5. Extract the file type and permalink.
+    '''
+
+    if not isinstance(data, dict) or 'data' not in data or 'attributes' not in data['data']:
+        raise VTRequestErrors(f"Unexpected JSON structure: {data}")
+
+    attributes = data['data']['attributes']
+    stats = attributes.get('last_analysis_stats', {})
+
+    # Stats Parsing: positives/total
+    malicious = stats.get("malicious", 0) if isinstance(stats, dict) else 0
+    total_engines = sum(stats.values()) if isinstance(stats, dict) else 0
+    is_flagged = malicious > 0
+    file_type = attributes.get("type_description", "Unknown")
+    permalink = f"https://www.virustotal.com/gui/file/{file_hash}"
+
+    analysis_results = attributes.get("last_analysis_results", {})
+    target_engines = ["Microsoft", "Kaspersky", "ESET-NOD32", "BitDefender", "Avast", "AVG", "McAfee"]
+    engine_detections = Dict[str, Optional[str]]()
+
+    for engine in target_engines:
+        engine_data = analysis_results.get(engine)
+        if engine_data and isinstance(engine_data, dict):
+            # Result has a 'result' field, which can be None or a string indicating the detection
+            engine_detections[engine] = engine_data.get("result")
+        else:
+            engine_detections[engine] = None
+
+    return VTResult(
+        file_hash = file_hash,
+        malicious = malicious,
+        total_engines = total_engines,
+        is_flagged = is_flagged,
+        file_type = file_type,
+        permalink = permalink,
+        engine_detections = engine_detections
+    )
+    
+
 # Main Function to check file reputation using VT API v3
-def check_hash (file_hash: str, api_key: str | None = None, session: requests.Session | None = None) -> VTResult:
+def check_hash (file_hash: str, api_key: Optional[str] = None, session: Optional[requests.Session] = None) -> VTResult:
     '''
     Send request to VT API v3 to research the reputation of a file hash.
     Arguments list:
@@ -85,7 +138,7 @@ def check_hash (file_hash: str, api_key: str | None = None, session: requests.Se
     key = api_key or get_API_key()
 
     url = f"https://www.virustotal.com/api/v3/files/{clean_hash}"
-    headers = {"x-apikey": key}
+    headers = {"x-apikey": key, "Accept": "application/json"}
 
     client = session if session is not None else requests
 
@@ -112,25 +165,5 @@ def check_hash (file_hash: str, api_key: str | None = None, session: requests.Se
     except (ValueError, TypeError) as e:
         raise VTRequestErrors(f"Error while parsing JSON response: {e}")
 
-    # Step 4: Check Responding JSON Structure
-    if not isinstance(data, dict) or 'data' not in data or 'attributes' not in data['data']:
-        raise VTRequestErrors(f"Unexpected JSON structure: {data}")
-
-    attributes = data['data']['attributes']
-    stats = attributes.get('last_analysis_stats', {})
-
-    # Step 5: Analyze information fields and return VTResult object
-    malicious = stats.get("malicious", 0) if isinstance(stats, dict) else 0
-    total_engines = sum(stats.values()) if isinstance(stats, dict) else 0
-    is_flagged = malicious > 0
-    file_type = attributes.get("type_description", "Unknown") 
-    permalink = f"https://www.virustotal.com/gui/file/{clean_hash}"
-
-    return VTResult(
-        file_hash = clean_hash,
-        malicious = malicious,
-        total_engines = total_engines,
-        is_flagged = is_flagged,
-        file_type = file_type,
-        permalink = permalink
-    )
+    # Step 4: Parse the VT API response and return a VTResult object
+    return parse_VT_response(data, clean_hash)
