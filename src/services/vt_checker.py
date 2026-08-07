@@ -101,7 +101,7 @@ def parse_VT_response (data: Dict[str, Any], file_hash: str) -> VTResult:
 
     analysis_results = attributes.get("last_analysis_results", {})
     target_engines = ["Microsoft", "Kaspersky", "ESET-NOD32", "BitDefender", "Avast", "AVG", "McAfee"]
-    engine_detections = Dict[str, Optional[str]]()
+    engine_detections: Dict[str, Optional[str]] = {}
 
     for engine in target_engines:
         engine_data = analysis_results.get(engine)
