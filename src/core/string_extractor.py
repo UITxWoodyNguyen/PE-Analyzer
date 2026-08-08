@@ -5,7 +5,7 @@ It provides functions to identify and extract sequences of printable characters,
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Generator, Iterable, List, Optional, Pattern, Union
+from typing import Dict, Generator, Iterable, List, Optional, Pattern, Set, Union
 import re
 
 @dataclass(frozen = True)
@@ -20,6 +20,19 @@ class ExtractedString:
     def hex_offset(self) -> str:
         # Returns the offset as a hexadecimal string
         return f"0x{self.offset:08X}"
+
+@dataclass(frozen = True)
+class IOCMatch:
+    # This dataclass represents a match for an IOC pattern
+    match_value: str # The matched value
+    ioc_type: str # The type of IOC (e.g., 'url', 'ipv4', 'email', etc.)
+    source_offset: int # The offset in the binary data where the match was found
+    source_encoding: str # The encoding of the source string from which the match was found
+
+    @property
+    def hex_offset(self) -> str:
+        # Returns the source offset as a hexadecimal string
+        return f"0x{self.source_offset:08X}"
 
 class StringExtractor:
     # This class provides method to extract strings from binary data.
@@ -131,6 +144,76 @@ class StringExtractor:
 
                 current_offset += len(chunk)  # Update the current offset
                 leftover = combined[-overlap_size:] if len(combined) > overlap_size else combined  # Keep the last part of the combined chunk for the next iteration
+
+    @classmethod
+    def filter_ipv4 (cls, strings: Iterable[Union[ExtractedString, str]], unique: bool = True) -> List[IOCMatch]:
+        '''
+        Filter extracted strings to find valid IPv4 addresses.
+        Arguments:
+            - strings: An iterable of ExtractedString objects or raw strings to filter.
+            - unique: If True, only unique IPv4 addresses will be returned. Default is True.
+        Returns: A list of IOCMatch objects containing the matched IPv4 addresses and their metadata.
+        '''
+
+        result: List[IOCMatch] = []
+        seen: Set[str] = set()  # To track unique IPv4 addresses
+
+        for item in strings:
+            text = item.value if isinstance(item, ExtractedString) else str(item)
+            offset = item.offset if isinstance(item, ExtractedString) else 0
+            encoding = item.encoding if isinstance(item, ExtractedString) else "UNKNOWN"
+
+            for match in cls.IPV4_REGEX.finditer(text):
+                ip_str = match.group()
+                if unique and ip_str in seen:
+                    continue
+
+                seen.add(ip_str)
+                result.append(IOCMatch(match_value=ip_str, ioc_type="ipv4", source_offset=offset + match.start(), source_encoding=encoding))
+
+        return result
+
+    @classmethod
+    def filter_domains_and_urls(cls, strings: Iterable[Union[ExtractedString, str]], unique: bool = True) -> Dict[str, List[IOCMatch]]:
+        '''
+        Filter extracted strings to find valid URLS and domains.
+        Arguments:
+            - strings: An iterable of ExtractedString objects or raw strings to filter.
+            - unique: If True, only unique URLs and domains will be returned. Default is True.
+
+        Returns: A dictionary with keys 'url' and 'domain', each containing a list of IOCMatch objects for the matched URLs and domains.
+        '''
+
+        urls: List[IOCMatch] = []
+        domains: List[IOCMatch] = []
+        seen_urls: Set[str] = set()  # To track unique URLs
+        seen_domains: Set[str] = set()  # To track unique domains
+
+        for item in strings:
+            text = item.value if isinstance(item, ExtractedString) else str(item)
+            offset = item.offset if isinstance(item, ExtractedString) else 0
+            encoding = item.encoding if isinstance(item, ExtractedString) else "UNKNOWN"
+
+            # Step 1: Extract URLs
+            for match in cls.URL_REGEX.finditer(text):
+                url_str = match.group()
+                if unique and url_str in seen_urls:
+                    continue
+
+                seen_urls.add(url_str)
+                urls.append(IOCMatch(match_value=url_str, ioc_type="url", source_offset=offset + match.start(), source_encoding=encoding))
+
+            # Step 2: Extract Domans
+            for match in cls.DOMAIN_REGEX.finditer(text):
+                dom_str = match.group()
+                if any(dom_str in u for u in seen_urls):
+                    continue  # Skip if the domain is part of a previously found URL
+                if unique and dom_str in seen_domains:
+                    continue
+                seen_domains.add(dom_str)
+                domains.append(IOCMatch(match_value=dom_str, ioc_type="domain", source_offset=offset + match.start(), source_encoding=encoding))
+
+        return {"url": urls, "domain": domains}
 
     @classmethod
     def filter_IOCS (cls, extracted_strings: Iterable[ExtractedString]) -> Dict[str, List[ExtractedString]]:
