@@ -7,16 +7,17 @@ Usage:
 from pathlib import Path
 import sys
 import pytest
+
+PROJECT_ROOT = Path(__file__).parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
+
 from src.core.string_extractor import (
     ExtractedString,
     IOCMatch,
     StringExtractor,
     extracted_strings,
 )
-
-PROJECT_ROOT = Path(__file__).parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.append(str(PROJECT_ROOT))
 
 # Checkpoint 1: Test the extraction of basic string (ASCII, UTF-16LE, UTF-16BE)
 def test_extract_ascii_string():

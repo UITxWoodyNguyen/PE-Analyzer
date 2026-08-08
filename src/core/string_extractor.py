@@ -46,18 +46,33 @@ class StringExtractor:
         "reg_key": re.compile(r"\b(?:HKLM|HKCU|HKCR|HKEY_LOCAL_MACHINE|HKEY_CURRENT_USER)\\[\w\\]+\b", re.IGNORECASE),
     }
 
-    def __init__(self, min_length: int = 4, encodings: Optional[Iterable[str]] = None) -> None:
+    URL_REGEX: Pattern[str] = re.compile(r"\b(?:https?|ftp)://[a-zA-Z0-9_\-\.\:\@\/\?\=\&\%\#\+]+", re.IGNORECASE)
+    IPV4_REGEX: Pattern[str] = re.compile(
+        r"(?<!\d)(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3}(?!\d)"
+    )
+    DOMAIN_REGEX: Pattern[str] = re.compile(
+        r"\b(?:[A-Za-z0-9-]+\.)+(?:[A-Za-z]{2,}|onion)\b",
+        re.IGNORECASE,
+    )
+
+    def __init__(self, min_length: int = 4, encodings: Optional[Iterable[str]] = None, *, min_len: Optional[int] = None) -> None:
         '''
         Arguments explanation:
             - min_length: Minimum length of strings to extract. Default is 4.
             - encodings: List of encodings to consider for string extraction. If None, defaults to ['ascii', 'utf-16-le'].
         '''
 
+        if min_len is not None:
+            min_length = min_len
+
         if min_length < 1:
-            raise ValueError("Minimum length must be at least 1.")
+            raise ValueError("min_len must be at least 1.")
 
         self.min_length = min_length
-        self.encodings = [e.lower() for e in (encodings or ['ascii', 'utf-16-le'])]
+        self.encodings = {
+            e.lower().replace("_", "").replace("-", "")
+            for e in (encodings or ['ascii', 'utf-16-le', 'utf-16-be'])
+        }
 
         # Step 1: Regex ASCII 
         self._ascii_pattern = re.compile(rb"[\x20-\x7E\t\r\n]{" + str(self.min_length).encode("ascii") + rb",}")    # Printable ASCII characters (space to tilde, tab, carriage return, newline)
@@ -88,24 +103,24 @@ class StringExtractor:
                 results.append(ExtractedString(value=value, offset=offset, encoding="ASCII", length=len(raw_bytes)))
 
         # Step 2: Scan for UTF-16 LE strings
-        if "utf-16-le" in self.encodings:
+        if "utf16le" in self.encodings:
             for match in self._utf16le_pattern.finditer(data):
                 raw_bytes = match.group()
                 try:
                     value = raw_bytes.decode("utf-16-le", errors = "replace")
                     offset = base_offset + match.start()
-                    results.append(ExtractedString(value=value, offset=offset, encoding="UTF-16 LE", length=len(raw_bytes)))
+                    results.append(ExtractedString(value=value, offset=offset, encoding="UTF-16LE", length=len(raw_bytes)))
                 except UnicodeDecodeError:
                     continue  # Skip invalid UTF-16 LE sequences
 
         # Step 3: Scan for UTF-16 BE strings
-        if "utf-16-be" in self.encodings:
+        if "utf16be" in self.encodings:
             for match in self._utf16be_pattern.finditer(data):
                 raw_bytes = match.group()
                 try:
                     value = raw_bytes.decode("utf-16-be", errors = "replace")
                     offset = base_offset + match.start()
-                    results.append(ExtractedString(value=value, offset=offset, encoding="UTF-16 BE", length=len(raw_bytes)))
+                    results.append(ExtractedString(value=value, offset=offset, encoding="UTF-16BE", length=len(raw_bytes)))
                 except UnicodeDecodeError:
                     continue  # Skip invalid UTF-16 BE sequences
 
@@ -169,7 +184,7 @@ class StringExtractor:
                     continue
 
                 seen.add(ip_str)
-                result.append(IOCMatch(match_value=ip_str, ioc_type="ipv4", source_offset=offset + match.start(), source_encoding=encoding))
+                result.append(IOCMatch(match_value=ip_str, ioc_type="IPv4", source_offset=offset + match.start(), source_encoding=encoding))
 
         return result
 
@@ -213,7 +228,7 @@ class StringExtractor:
                 seen_domains.add(dom_str)
                 domains.append(IOCMatch(match_value=dom_str, ioc_type="domain", source_offset=offset + match.start(), source_encoding=encoding))
 
-        return {"url": urls, "domain": domains}
+        return {"urls": urls, "domains": domains}
 
     @classmethod
     def filter_IOCS (cls, extracted_strings: Iterable[ExtractedString]) -> Dict[str, List[ExtractedString]]:
@@ -228,13 +243,20 @@ class StringExtractor:
                     classifield[key].append(items)
         return classifield
 
-def extracted_strings(target: Union[bytes, str, Path], min_length: int = 4, encodings: Optional[Iterable[str]] = None) -> List[ExtractedString]:
+    @classmethod
+    def filter_iocs(cls, extracted_strings: Iterable[ExtractedString]) -> Dict[str, List[ExtractedString]]:
+        return cls.filter_IOCS(extracted_strings)
+
+def extracted_strings(target: Union[bytes, str, Path], min_length: int = 4, encodings: Optional[Iterable[str]] = None, *, min_len: Optional[int] = None) -> List[ExtractedString]:
     '''
     A convenience function to extract strings from bytes or a file.
     Arguments:
         - target: The target data to extract strings from. Can be bytes, a file path (str or Path).
         - min_length: Minimum length of strings to extract. Default is 4.
     '''
+
+    if min_len is not None:
+        min_length = min_len
 
     extractor = StringExtractor(min_length=min_length, encodings=encodings)
     if isinstance(target, (str, Path)):
