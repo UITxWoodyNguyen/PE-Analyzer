@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from dataclasses import dataclass
 
-from sympy import true
+# use built-in True/False for boolean defaults
 
 '''
 This module is used to check if a file is a valid PE file.
@@ -27,7 +27,7 @@ class PECheckResult:
     isValid_PE: bool
     reason: str
 
-def PE_checker (file_path: str | Path, full_check: bool = true) -> PECheckResult:
+def PE_checker (file_path: str | Path, full_check: bool = True) -> PECheckResult:
     '''
     Arguments:
         file_path: path of the file need to be checked
