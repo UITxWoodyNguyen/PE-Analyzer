@@ -24,7 +24,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from src.core.string_extractor import extract_strings
 from src.services.vt_checker import VTResult, check_hash
 
-# Chuỗi EICAR chuẩn quốc tế (68 bytes)
+# EICAR string (68 bytes)
 EICAR_STRING = r"X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
 EICAR_SHA256 = "275a021bbfb6489e54d471899f7db9d1663fc695ec2fe2a2c4538aabf651fd0f"
 EICAR_MD5 = "44d88612fea8a8f36de82e1278abb02f"
@@ -45,8 +45,8 @@ def run_eicar_pipeline(file_path: Path) -> tuple[str, list, VTResult]:
     sha256 = hashlib.sha256(content).hexdigest()
     md5 = hashlib.md5(content).hexdigest()
 
-    assert sha256 == EICAR_SHA256, f"SHA-256 không khớp! Lấy được: {sha256}"
-    assert md5 == EICAR_MD5, f"MD5 không khớp! Lấy được: {md5}"
+    assert sha256 == EICAR_SHA256, f"SHA-256 does not match! Got: {sha256}"
+    assert md5 == EICAR_MD5, f"MD5 does not match! Got: {md5}"
 
     # 2. Extract strings
     extracted = extract_strings(file_path, min_len=4, encodings=["ascii"])
@@ -98,38 +98,3 @@ def test_eicar_integration_pipeline(tmp_path):
     assert vt_result.is_flagged is True
     assert vt_result.file_type == "DOS COM"
 
-
-# ---------------------------------------------------------------------------
-# CLI Execution (When running the file directly)
-# ---------------------------------------------------------------------------
-
-if __name__ == "__main__":
-    test_file = PROJECT_ROOT / "samples" / "eicar_test.com"
-    test_file.parent.mkdir(exist_ok=True)
-
-    try:
-        sha256, extracted_strings, vt_res = run_eicar_pipeline(test_file)
-
-        print("=" * 65)
-        print("[1] THÔNG TIN FILE MẪU EICAR:")
-        print(f"  - File Path : {test_file.name}")
-        print(f"  - File Size : {test_file.stat().st_size} bytes")
-        print(f"  - SHA-256   : {sha256}")
-        print(f"  - MD5       : {EICAR_MD5}")
-
-        print("\n[2] CHẠY THỬ NGHIỆM STRING EXTRACTOR:")
-        for s in extracted_strings:
-            print(f"  - {s.hex_offset} | [{s.encoding}] {s.value}")
-
-        print("\n[3] CHẠY THỬ NGHIỆM VIRUSTOTAL CHECKER (MOCK DATA):")
-        print(f"  - File Hash       : {vt_res.file_hash}")
-        print(f"  - Detection Ratio : {vt_res.malicious}/{vt_res.total_engines}")
-        print(f"  - Is Flagged      : {vt_res.is_flagged}")
-        print(f"  - File Type       : {vt_res.file_type}")
-        print(f"  - Report Link     : {vt_res.permalink}")
-        print("=" * 65)
-
-    finally:
-        # Automatically clean up the test file after execution
-        if test_file.exists():
-            test_file.unlink()
