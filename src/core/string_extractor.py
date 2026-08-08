@@ -265,3 +265,7 @@ def extracted_strings(target: Union[bytes, str, Path], min_length: int = 4, enco
         return list(extractor.extract_from_bytes(target))
     else:
         raise TypeError("Unsupported target type. Please provide bytes, a file path (str or Path), or a file object.")
+
+
+def extract_strings(target: Union[bytes, str, Path], min_length: int = 4, encodings: Optional[Iterable[str]] = None, *, min_len: Optional[int] = None) -> List[ExtractedString]:
+    return extracted_strings(target, min_length=min_length, encodings=encodings, min_len=min_len)
