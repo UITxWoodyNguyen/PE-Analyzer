@@ -342,7 +342,8 @@ def main() -> int:
             print(f"Is 64-bit: {info.is_64bit}")
             print(f"Number of Sections: {info.number_of_sections}")
 
-            print_imports(info.imported_dlls if hasattr(info, 'imported_dlls') else [])
+            imports = parse_pe_import(file_path)
+            print_imports(imports)
 
             if info.compile_time is not None:
                 print(f"Compile Time (Unix Timestamp): {info.compile_time}")
