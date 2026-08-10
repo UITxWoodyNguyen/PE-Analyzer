@@ -1,8 +1,8 @@
 from __future__ import annotations
 import sys
 from pathlib import Path
-from dataclasses import dataclass
-from typing import Set, Union, Optional
+from dataclasses import dataclass, field
+from typing import List, Set, Union, Optional
 import pefile
 
 # use built-in True/False for boolean defaults
@@ -23,11 +23,63 @@ PE_SIGNATURE = 0x00004550   # "PE\0\0"
 E_LFANEW_OFFSET = 0x3C   # Offset to the PE header pointer in the DOS header
 E_LFANEW_SIZE = 4   # Size of the PE header pointer in bytes
 
+# List of Windows API functions that are suspicious and may indicate malicious behavior
+SUSPICIOUS_API: Set[str] = {
+    # Memory Allocation & Protection
+    "VirtualAlloc", "VirtualAllocEx", "VirtualProtect", "VirtualProtectEx",
+    "WriteProcessMemory", "ReadProcessMemory", "MapViewOfFile",
+    # Process & Thread Injection / Execution
+    "CreateProcessA", "CreateProcessW", "CreateRemoteThread", "OpenProcess",
+    "QueueUserAPC", "SetThreadContext", "ResumeThread", "NtUnmapViewOfSection",
+    # Dynamic Loading
+    "LoadLibraryA", "LoadLibraryW", "LoadLibraryExA", "LoadLibraryExW",
+    "GetProcAddress", "LdrLoadDll",
+    # Persistence & System Modification
+    "RegCreateKeyExA", "RegCreateKeyExW", "RegSetValueExA", "RegSetValueExW",
+    "RegOpenKeyExA", "RegOpenKeyExW",
+    # Network & Communication
+    "InternetOpenA", "InternetOpenW", "InternetOpenUrlA", "InternetOpenUrlW",
+    "HttpSendRequestA", "HttpSendRequestW", "URLDownloadToFileA", "URLDownloadToFileW",
+    "WSAStartup", "socket", "connect", "send", "recv",
+    # Anti-Analysis / Evasion
+    "IsDebuggerPresent", "CheckRemoteDebuggerPresent", "NtQueryInformationProcess",
+    "GetTickCount", "OutputDebugStringA", "OutputDebugStringW",
+    # Keylogging & Hooking
+    "SetWindowsHookExA", "SetWindowsHookExW", "GetAsyncKeyState", "GetKeyState"
+}
+
 @dataclass
 class PECheckResult:
     path: str
     isValid_PE: bool
     reason: str
+
+@dataclass
+class ImportedFunction:
+    # This dataclass represents an Windows API function imported by a PE file.
+    name: Optional[str]
+    ordinal: Optional[int]
+    address: int
+    is_ordinal: bool
+    is_suspicious: bool
+
+    @property
+    def display_name(self) -> str:
+        return self.name if self.name else f"Ordinal_{self.ordinal}" if self.ordinal is not None else "Unknown"
+
+    @property
+    def hex_address(self) -> str:
+        return f"0x{self.address:08X}"
+
+@dataclass
+class ImportedDLL:
+    # This class represents a DLL imported by a PE file, along with its imported functions.
+    dll_name: str
+    functions: list[ImportedFunction] = field(default_factory=list)
+
+    @property
+    def function_count(self) -> int:
+        return len(self.functions)
 
 @dataclass
 class PEInfo:
@@ -138,6 +190,58 @@ def PE_checker (file_path: str | Path, full_check: bool = True) -> PECheckResult
 
         return PECheckResult(_path, _valid, _reason)
 
+def parse_pe_import (pe: Union[pefile.PE, str, Path]) -> List[ImportedDLL]:
+    '''
+    This function parses the imported DLLs and functions from a PE file and returns a list of ImportedDLL objects.
+    Arguments:
+        pe: a pefile.PE object or a path to the PE file
+    Returns:
+        A list of ImportedDLL objects containing the imported DLLs and their functions
+    '''
+
+    should_close = False
+    if isinstance(pe, (str, Path)):
+        path = Path(pe)
+        if not path.is_file():
+            raise FileNotFoundError(f"File not found: {path}")
+        try:
+            pe_instance = pefile.PE(str(path))
+            should_close = True
+        except pefile.PEFormatError as e:
+            raise ValueError(f"Invalid PE file: {e}")
+    else:
+        pe_instance = pe
+
+    try:
+        # Make sure Data Directory for imports is present
+        if not hasattr(pe_instance, 'DIRECTORY_ENTRY_IMPORT'):
+            pe_instance.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY['IMAGE_DIRECTORY_ENTRY_IMPORT']])
+
+        imported_dlls: List[ImportedDLL] = []
+
+        if hasattr(pe_instance, 'DIRECTORY_ENTRY_IMPORT'):
+            for entry in pe_instance.DIRECTORY_ENTRY_IMPORT:
+                # Extract DLL name
+                dll_name = entry.dll.decode('utf-8', errors='ignore') if entry.dll else "Unknown DLL"
+                functions: List[ImportedFunction] = []
+
+                # Extract imported functions
+                for imp in getattr(entry, 'imports', []):
+                    is_ordinal = imp.name is None
+                    func_name = imp.name.decode('utf-8', errors='ignore') if imp.name else None
+                    ordinal = getattr(imp, 'ordinal', None)
+                    address = getattr(imp, 'address', 0)
+
+                    is_suspicious = func_name in SUSPICIOUS_API if func_name else False
+
+                    functions.append(ImportedFunction(name=func_name, ordinal=ordinal, address=address, is_ordinal=is_ordinal, is_suspicious=is_suspicious))
+
+                imported_dlls.append(ImportedDLL(dll_name=dll_name, functions=functions))
+        return imported_dlls
+    finally:
+        if should_close:
+            pe_instance.close()
+
 def parse_pe_info (file_path: Union[str, Path], fast_load: bool = True) -> PEInfo:
     '''
     This function parses the PE file and returns a PEInfo object containing relevant information.
@@ -200,6 +304,18 @@ def parse_pe_info (file_path: Union[str, Path], fast_load: bool = True) -> PEInf
         raise ValueError(f"Error occurred while parsing PE info: {e}")
     finally:
         pe.close()
+
+def print_imports (imports: List[ImportedDLL]) -> None:
+    if not imports:
+        print("No imported DLLs found.")
+        return
+
+    print("Imported DLLs and Functions:")
+    for dll in imports:
+        print(f"  DLL: {dll.dll_name} (Functions: {dll.function_count})")
+        for func in dll.functions:
+            suspicious_flag = " [SUSPICIOUS]" if func.is_suspicious else ""
+            print(f"    Function: {func.display_name}, Address: {func.hex_address}{suspicious_flag}")
     
 def main() -> int:
     if len(sys.argv) < 2:
@@ -225,6 +341,9 @@ def main() -> int:
             print(f"Entry Point VA: {info.entry_point_va_hex}")
             print(f"Is 64-bit: {info.is_64bit}")
             print(f"Number of Sections: {info.number_of_sections}")
+
+            print_imports(info.imported_dlls if hasattr(info, 'imported_dlls') else [])
+
             if info.compile_time is not None:
                 print(f"Compile Time (Unix Timestamp): {info.compile_time}")
             else:
