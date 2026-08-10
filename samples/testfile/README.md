@@ -16,15 +16,13 @@ sudo apt install -y mingw-w64
 Build a 64-bit Windows PE executable:
 
 ```bash
-x86_64-w64-mingw32-gcc -std=c11 -O2 -Wall -Wextra \
-  -o pe_analyzer_lab_sample.exe pe_analyzer_lab_sample.c
+x86_64-w64-mingw32-gcc -std=c11 -O2 -Wall -Wextra \-o pe_analyzer_lab_sample.exe pe_analyzer_lab_sample.c
 ```
 
 Optional 32-bit build:
 
 ```bash
-i686-w64-mingw32-gcc -std=c11 -O2 -Wall -Wextra \
-  -o pe_analyzer_lab_sample_x86.exe pe_analyzer_lab_sample.c
+i686-w64-mingw32-gcc -std=c11 -O2 -Wall -Wextra \-o pe_analyzer_lab_sample_x86.exe pe_analyzer_lab_sample.c
 ```
 
 ## Inspect in Kali
