@@ -2,6 +2,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from dataclasses import dataclass
+from typing import Set, Union, Optional
+import pefile
 
 # use built-in True/False for boolean defaults
 
@@ -26,6 +28,33 @@ class PECheckResult:
     path: str
     isValid_PE: bool
     reason: str
+
+@dataclass
+class PEInfo:
+    # This dataclass is used to store the information of a PE file.
+    path: str
+    machine_raw: int
+    machine_name: str
+    machine_arch: str
+    entry_point_rva: int
+    entry_point_rva_hex: str
+    image_base: int
+    image_base_hex: str
+    entry_point_va: int
+    entry_point_va_hex: str
+    is_64bit: bool
+    number_of_sections: int
+    compile_time: Optional[int]
+
+# Mapping of machine types to architecture names
+MACHINE_ARCH_MAP = {
+    0x014C: "x86 (I386)",
+    0x8664: "x64 (AMD64)",
+    0x01C0: "ARM Little-Endian",
+    0xAA64: "ARM64 Little-Endian",
+    0x0200: "Intel Itanium (IA-64)",
+    0x01C4: "ARM Thumb-2",
+}
 
 def PE_checker (file_path: str | Path, full_check: bool = True) -> PECheckResult:
     '''
@@ -109,6 +138,69 @@ def PE_checker (file_path: str | Path, full_check: bool = True) -> PECheckResult
 
         return PECheckResult(_path, _valid, _reason)
 
+def parse_pe_info (file_path: Union[str, Path], fast_load: bool = True) -> PEInfo:
+    '''
+    This function parses the PE file and returns a PEInfo object containing relevant information.
+    Arguments:
+        file_path: path of the PE file to be parsed
+        fast_load: if True, use fast load mode (only loads headers)
+    Returns:
+        PEInfo object containing relevant information about the PE file
+    '''
+
+    path = Path(file_path)
+    if not path.is_file():
+        raise FileNotFoundError(f"File not found: {path}")
+
+    # Init PE object from pefile
+    try:
+        pe = pefile.PE(str(path), fast_load=fast_load)
+    except pefile.PEFormatError as e:
+        raise ValueError(f"Invalid PE file: {e}")
+
+    try:
+        # Get Machine Type from Header
+        machine_raw = pe.FILE_HEADER.Machine
+        machine_name = pefile.MACHINE_TYPE.get(machine_raw, f"UNKNOWN_MACHINE_0X{machine_raw:04X}")
+        machine_arch = MACHINE_ARCH_MAP.get(machine_raw, machine_name)
+
+        # Get Entry Point and ImageBase from OPTIONAL_HEADER
+        entry_point_rva = getattr(pe.OPTIONAL_HEADER, 'AddressOfEntryPoint')
+        image_base = getattr(pe.OPTIONAL_HEADER, 'ImageBase')
+        entry_point_va = image_base + entry_point_rva
+
+        # Hexadecimal representations
+        magic = getattr(pe.OPTIONAL_HEADER, 'Magic')
+        is_64bit = magic == 0x20B  # PE32+ (64-bit)
+
+        hex_fmt = lambda x: f"0x{x:08X}" if not is_64bit else f"0x{x:016X}"
+        entry_point_rva_hex = hex_fmt(entry_point_rva)
+        image_base_hex = hex_fmt(image_base)
+        entry_point_va_hex = hex_fmt(entry_point_va)
+
+        number_of_sections = pe.FILE_HEADER.NumberOfSections
+        compile_time = pe.FILE_HEADER.TimeDateStamp if hasattr(pe.FILE_HEADER, 'TimeDateStamp') else None
+
+        return PEInfo(
+            path=str(path),
+            machine_raw=machine_raw,
+            machine_name=machine_name,
+            machine_arch=machine_arch,
+            entry_point_rva=entry_point_rva,
+            entry_point_rva_hex=entry_point_rva_hex,
+            image_base=image_base,
+            image_base_hex=image_base_hex,
+            entry_point_va=entry_point_va,
+            entry_point_va_hex=entry_point_va_hex,
+            is_64bit=is_64bit,
+            number_of_sections=number_of_sections,
+            compile_time=compile_time
+        )
+    except Exception as e:
+        raise ValueError(f"Error occurred while parsing PE info: {e}")
+    finally:
+        pe.close()
+    
 def main() -> int:
     if len(sys.argv) < 2:
         print("Usage: python3 pe_parser.py <path_to_file>")
@@ -116,11 +208,29 @@ def main() -> int:
 
     exit_code = 0
     for file_path in sys.argv[1:]:
+        # Validation of the PE file
         result = PE_checker(file_path)
         status = "VALID" if result.isValid_PE else "INVALID"
         print(f"{result.path}: {status} - {result.reason}")
 
         if not result.isValid_PE:
+            exit_code = 2
+
+        # Analyze with pefile
+        try:
+            info = parse_pe_info(file_path)
+            print(f"Machine Type: {info.machine_name} ({info.machine_arch})")
+            print(f"Entry Point RVA: {info.entry_point_rva_hex}")
+            print(f"Image Base: {info.image_base_hex}")
+            print(f"Entry Point VA: {info.entry_point_va_hex}")
+            print(f"Is 64-bit: {info.is_64bit}")
+            print(f"Number of Sections: {info.number_of_sections}")
+            if info.compile_time is not None:
+                print(f"Compile Time (Unix Timestamp): {info.compile_time}")
+            else:
+                print("Compile Time: Not available")
+        except ValueError as e:
+            print(f"Error parsing PE info for {file_path}: {e}")
             exit_code = 2
 
     return exit_code
