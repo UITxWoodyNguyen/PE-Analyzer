@@ -219,3 +219,34 @@ __marimo__/
 
 # Environment variables
 .env
+
+# 1. Bỏ qua toàn bộ các thư mục chứa file thực thi / binary đã build
+samples/bin/
+samples/output/
+bin/
+build/
+dist/
+target/
+
+# 2. Bỏ qua tất cả các định dạng file nhị phân & thực thi nguy hiểm
+*.exe
+*.dll
+*.sys
+*.ocx
+*.scr
+*.com
+*.bin
+*.dat
+*.payload
+
+# 3. Bỏ qua file mẫu EICAR và file test tạm thời
+eicar*
+*.vir
+*.malware
+*.sample
+*.tmp
+
+# 4. Cho phép giữ lại mã nguồn C/C++ trong malware-simulator để tái tạo môi trường
+!samples/malware-simulator/*.cpp
+!samples/malware-simulator/*.c
+!samples/malware-simulator/*.h
