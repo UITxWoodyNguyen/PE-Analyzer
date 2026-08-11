@@ -2,10 +2,12 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import List, Set, Union, Optional
+from typing import Any, List, Set, Union, Optional
 import pefile
 
-# use built-in True/False for boolean defaults
+_LOCAL_SITE_PACKAGES = Path(__file__).parent.parent / "site-packages"
+if _LOCAL_SITE_PACKAGES.exists():
+    sys.path.insert(0, str(_LOCAL_SITE_PACKAGES))
 
 '''
 This module is used to check if a file is a valid PE file.
@@ -22,6 +24,10 @@ MZ_SIGNATURE = 0x5A4D   # "MZ"
 PE_SIGNATURE = 0x00004550   # "PE\0\0"
 E_LFANEW_OFFSET = 0x3C   # Offset to the PE header pointer in the DOS header
 E_LFANEW_SIZE = 4   # Size of the PE header pointer in bytes
+
+SECTION_MEM_EXECUTE = 0x20000000   # Section characteristic flag for executable code
+SECTION_MEM_READ = 0x40000000   # Section characteristic flag for readable data
+SECTION_MEM_WRITE = 0x80000000   # Section characteristic flag for writable data
 
 # List of Windows API functions that are suspicious and may indicate malicious behavior
 SUSPICIOUS_API: Set[str] = {
@@ -53,6 +59,25 @@ class PECheckResult:
     path: str
     isValid_PE: bool
     reason: str
+
+@dataclass
+class PESectionInfo:
+    # This dataclass represents the information of a section in a PE file.
+    name: str   # Name of the section (e.g., .text, .data)
+    virtual_address: int    # Virtual address of the section in memory
+    virtual_address_hex: str    # Hexadecimal representation of the virtual address
+    virtual_size: int   # Virtual size of the section in memory
+    raw_pointer: int    # Pointer to the raw data of the section in the file
+    entropy: float  # Entropy of the section, indicating randomness (higher values may indicate packed or encrypted data)
+    is_readable: bool # Indicates if the section is readable
+    is_writable: bool   # Indicates if the section is writable
+    is_executable: bool     # Indicates if the section is executable
+    is_suspicious_entropy: bool     # Indicates if the section has suspicious entropy (e.g., > 7.0)
+    is_rwx: bool    # Indicates if the section has read, write, and execute permissions (RWX), which is often suspicious
+
+    @property
+    def permissions_str(self) -> str:
+        return f"{'R' if self.is_readable else '-'}{'W' if self.is_writable else '-'}{'X' if self.is_executable else '-'}"
 
 @dataclass
 class ImportedFunction:
@@ -97,6 +122,8 @@ class PEInfo:
     is_64bit: bool
     number_of_sections: int
     compile_time: Optional[int]
+    sections: List[PESectionInfo] = field(default_factory=list)
+    imports: List[ImportedDLL] = field(default_factory=list)
 
 # Mapping of machine types to architecture names
 MACHINE_ARCH_MAP = {
@@ -189,6 +216,74 @@ def PE_checker (file_path: str | Path, full_check: bool = True) -> PECheckResult
         _reason = f"OS ERROR: {e}"
 
         return PECheckResult(_path, _valid, _reason)
+
+def parse_pe_sections (pe: Union[Any, str, Path]) -> List[PESectionInfo]:
+    '''
+    This function parses the sections of a PE file and returns a list of PESectionInfo objects.
+    Arguments:
+        pe: a pefile.PE object or a path to the PE file
+    Returns:
+        A list of PESectionInfo objects containing the sections of the PE file
+    '''
+
+    should_close = False
+    if isinstance(pe, (str, Path)):
+        path = Path(pe)
+        if not path.is_file():
+            raise FileNotFoundError(f"File not found: {path}")
+        try:
+            pe_instance = pefile.PE(str(path))
+            should_close = True
+        except pefile.PEFormatError as e:
+            raise ValueError(f"Invalid PE file: {e}")
+    else:
+        pe_instance = pe
+
+    try:
+        sections_list: List[PESectionInfo] = []
+
+        for sec in getattr(pe_instance, 'sections', []):
+            raw_name = getattr(sec, 'Name', b'')
+            if isinstance(raw_name, bytes):
+                name = raw_name.split(b'\x00', 1)[0].decode('utf-8', errors='ignore')
+            else:
+                name = str(raw_name)
+
+            virtual_address = getattr(sec, 'VirtualAddress', 0)
+            virtual_size = getattr(sec, 'Misc_VirtualSize', getattr(sec, 'VirtualSize', 0))
+            raw_size = getattr(sec, 'SizeOfRawData', 0)
+            raw_pointer = getattr(sec, 'PointerToRawData', 0)
+
+            try:
+                entropy = float(sec.get_entropy())
+            except Exception:
+                entropy = 0.0
+
+            chars = getattr(sec, 'Characteristics', 0)
+            is_readable = bool(chars & SECTION_MEM_READ)
+            is_writable = bool(chars & SECTION_MEM_WRITE)
+            is_executable = bool(chars & SECTION_MEM_EXECUTE)
+
+            is_suspicious_entropy = entropy > 7.0
+            is_rwx = is_writable and is_executable
+
+            sections_list.append(PESectionInfo(
+                name=name,
+                virtual_address=virtual_address,
+                virtual_address_hex=f"0x{virtual_address:08X}",
+                virtual_size=virtual_size,
+                raw_pointer=raw_pointer,
+                entropy=entropy,
+                is_readable=is_readable,
+                is_writable=is_writable,
+                is_executable=is_executable,
+                is_suspicious_entropy=is_suspicious_entropy,
+                is_rwx=is_rwx
+            ))
+        return sections_list
+    finally:
+        if should_close:
+            pe_instance.close()
 
 def parse_pe_import (pe: Union[pefile.PE, str, Path]) -> List[ImportedDLL]:
     '''
@@ -285,6 +380,9 @@ def parse_pe_info (file_path: Union[str, Path], fast_load: bool = True) -> PEInf
         number_of_sections = pe.FILE_HEADER.NumberOfSections
         compile_time = pe.FILE_HEADER.TimeDateStamp if hasattr(pe.FILE_HEADER, 'TimeDateStamp') else None
 
+        sections = parse_pe_sections(pe)
+        imports = parse_pe_import(pe)
+
         return PEInfo(
             path=str(path),
             machine_raw=machine_raw,
@@ -298,12 +396,25 @@ def parse_pe_info (file_path: Union[str, Path], fast_load: bool = True) -> PEInf
             entry_point_va_hex=entry_point_va_hex,
             is_64bit=is_64bit,
             number_of_sections=number_of_sections,
-            compile_time=compile_time
+            compile_time=compile_time,
+            sections=sections,
+            imports=imports
         )
     except Exception as e:
         raise ValueError(f"Error occurred while parsing PE info: {e}")
     finally:
         pe.close()
+
+def print_sections(sections: List[PESectionInfo]) -> None:
+    if not sections:
+        print("No sections found.")
+        return
+
+    print("Sections:")
+    for sec in sections:
+        rwx_flag = " [RWX]" if sec.is_rwx else ""
+        suspicious_entropy_flag = " [SUSPICIOUS ENTROPY]" if sec.is_suspicious_entropy else ""
+        print(f"  Section: {sec.name}, VA: {sec.virtual_address_hex}, Size: {sec.virtual_size}, Entropy: {sec.entropy:.2f}, Permissions: {sec.permissions_str}{rwx_flag}{suspicious_entropy_flag}")
 
 def print_imports (imports: List[ImportedDLL]) -> None:
     if not imports:
@@ -342,8 +453,8 @@ def main() -> int:
             print(f"Is 64-bit: {info.is_64bit}")
             print(f"Number of Sections: {info.number_of_sections}")
 
-            imports = parse_pe_import(file_path)
-            print_imports(imports)
+            print_sections(info.sections)
+            print_imports(info.imports)
 
             if info.compile_time is not None:
                 print(f"Compile Time (Unix Timestamp): {info.compile_time}")
