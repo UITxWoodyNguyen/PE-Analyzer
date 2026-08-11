@@ -3,9 +3,7 @@ from logging import info
 import sys
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Any, Cou, Counter
-
-from distro import infonter, List, Set, Union, Optional
+from typing import Any, Counter, List, Optional, Set, Union
 from unittest import result
 import pefile
 import math
@@ -569,6 +567,8 @@ def main() -> int:
             print(f"Error parsing PE info for {file_path}: {e}")
             print(f"\nERROR: Could not parse PE information: {e}")
             exit_code = 2
+
+    return exit_code
 
 if __name__ == "__main__":
     sys.exit(main())
