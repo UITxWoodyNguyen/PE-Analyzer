@@ -1,9 +1,14 @@
 from __future__ import annotations
+from logging import info
 import sys
 from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Any, List, Set, Union, Optional
+from typing import Any, Cou, Counter
+
+from distro import infonter, List, Set, Union, Optional
+from unittest import result
 import pefile
+import math
 
 _LOCAL_SITE_PACKAGES = Path(__file__).parent.parent / "site-packages"
 if _LOCAL_SITE_PACKAGES.exists():
@@ -24,6 +29,8 @@ MZ_SIGNATURE = 0x5A4D   # "MZ"
 PE_SIGNATURE = 0x00004550   # "PE\0\0"
 E_LFANEW_OFFSET = 0x3C   # Offset to the PE header pointer in the DOS header
 E_LFANEW_SIZE = 4   # Size of the PE header pointer in bytes
+
+ENTROPY_PACKED_THRESHOLD = 7.0   # Threshold for suspicious entropy, indicating potential packed or encrypted data
 
 SECTION_MEM_EXECUTE = 0x20000000   # Section characteristic flag for executable code
 SECTION_MEM_READ = 0x40000000   # Section characteristic flag for readable data
@@ -54,6 +61,37 @@ SUSPICIOUS_API: Set[str] = {
     "SetWindowsHookExA", "SetWindowsHookExW", "GetAsyncKeyState", "GetKeyState"
 }
 
+COMMON_PACKER_SECTIONS: Set[str] = {
+    "UPX0", "UPX1", "UPX2", ".upx",
+    "ASPack", ".aspack",
+    "Themida", ".themida",
+    "PECompact2", "PEC2",
+    "MPRESS1", "MPRESS2",
+    ".vmp0", ".vmp1", ".vmp2",  # VMProtect
+    ".nsp0", ".nsp1",           # NsPack
+    "yC", "yoda",               # yoda's Protector
+}
+
+def calculate_shannon_entropy (data: bytes) -> float:
+    '''
+    This function calculates the Shannon entropy of a given byte sequence.
+    Value ranges from 0.0 (no randomness) to 8.0 (maximum randomness).
+    Formula: H(X) = -sum(p(x) * log2(p(x))) for all unique bytes x in the data
+    '''
+
+    if not data:
+        return 0.0
+
+    length = len(data)
+    byte_counts = Counter(data)
+    entropy = 0.0
+
+    for count in byte_counts.values():
+        probability = count / length
+        entropy -= probability * math.log2(probability)
+
+    return round(entropy, 4)  # Round to 4 decimal places for readability
+
 @dataclass
 class PECheckResult:
     path: str
@@ -74,6 +112,7 @@ class PESectionInfo:
     is_executable: bool     # Indicates if the section is executable
     is_suspicious_entropy: bool     # Indicates if the section has suspicious entropy (e.g., > 7.0)
     is_rwx: bool    # Indicates if the section has read, write, and execute permissions (RWX), which is often suspicious
+    packet_warning: Optional[str] = None  # Optional warning message for suspicious sections (e.g., high entropy, RWX permissions, etc.)
 
     @property
     def permissions_str(self) -> str:
@@ -124,6 +163,8 @@ class PEInfo:
     compile_time: Optional[int]
     sections: List[PESectionInfo] = field(default_factory=list)
     imports: List[ImportedDLL] = field(default_factory=list)
+    has_packed_sections: bool = False
+    packer_alerts: List[str] = field(default_factory=list)
 
 # Mapping of machine types to architecture names
 MACHINE_ARCH_MAP = {
@@ -255,17 +296,31 @@ def parse_pe_sections (pe: Union[Any, str, Path]) -> List[PESectionInfo]:
             raw_pointer = getattr(sec, 'PointerToRawData', 0)
 
             try:
-                entropy = float(sec.get_entropy())
+                sec_data = sec.get_data()
+                entropy = calculate_shannon_entropy(sec_data)
             except Exception:
-                entropy = 0.0
+                try:
+                    entropy = float(sec.get_entropy())
+                except Exception:
+                    entropy = 0.0
 
             chars = getattr(sec, 'Characteristics', 0)
             is_readable = bool(chars & SECTION_MEM_READ)
             is_writable = bool(chars & SECTION_MEM_WRITE)
             is_executable = bool(chars & SECTION_MEM_EXECUTE)
 
-            is_suspicious_entropy = entropy > 7.0
+            is_suspicious_entropy = entropy > ENTROPY_PACKED_THRESHOLD
             is_rwx = is_writable and is_executable
+
+            warning_reasons = []
+            if is_suspicious_entropy:
+                warning_reasons.append(f"Suspicious entropy: {entropy:.4f} > {ENTROPY_PACKED_THRESHOLD}")
+            if any(name.startswith(pk) for pk in COMMON_PACKER_SECTIONS):
+                warning_reasons.append(f"Section name '{name}' matches common packer section names")
+            if is_rwx:
+                warning_reasons.append("Section has RWX permissions")
+
+            packet_warning = " | ".join(warning_reasons) if warning_reasons else None
 
             sections_list.append(PESectionInfo(
                 name=name,
@@ -278,7 +333,8 @@ def parse_pe_sections (pe: Union[Any, str, Path]) -> List[PESectionInfo]:
                 is_writable=is_writable,
                 is_executable=is_executable,
                 is_suspicious_entropy=is_suspicious_entropy,
-                is_rwx=is_rwx
+                is_rwx=is_rwx,
+                packet_warning=packet_warning
             ))
         return sections_list
     finally:
@@ -381,6 +437,9 @@ def parse_pe_info (file_path: Union[str, Path], fast_load: bool = True) -> PEInf
         compile_time = pe.FILE_HEADER.TimeDateStamp if hasattr(pe.FILE_HEADER, 'TimeDateStamp') else None
 
         sections = parse_pe_sections(pe)
+        packer_alerts = [sec.packet_warning for sec in sections if sec.packet_warning]
+        has_packed_sections = any(sec.is_suspicious_entropy or sec.is_rwx or any(sec.name.startswith(pk) for pk in COMMON_PACKER_SECTIONS) for sec in sections)
+
         imports = parse_pe_import(pe)
 
         return PEInfo(
@@ -398,7 +457,9 @@ def parse_pe_info (file_path: Union[str, Path], fast_load: bool = True) -> PEInf
             number_of_sections=number_of_sections,
             compile_time=compile_time,
             sections=sections,
-            imports=imports
+            imports=imports,
+            has_packed_sections=has_packed_sections,
+            packer_alerts=packer_alerts
         )
     except Exception as e:
         raise ValueError(f"Error occurred while parsing PE info: {e}")
@@ -408,42 +469,73 @@ def parse_pe_info (file_path: Union[str, Path], fast_load: bool = True) -> PEInf
 def print_sections(sections: List[PESectionInfo]) -> None:
     if not sections:
         print("No sections found.")
+        print("\n[Sections]\n  No sections found.")
         return
-
+ 
     print("Sections:")
+    print("\n[Sections]")
+    print(f"  {len(sections)} section(s) found")
+    print("  " + "-" * 94)
+    print(f"  {'Name':<12} {'Virtual Address':<18} {'Virtual Size':>14} {'Entropy':>10} {'Perms':<7} Status")
+    print("  " + "-" * 94)
     for sec in sections:
         rwx_flag = " [RWX]" if sec.is_rwx else ""
         suspicious_entropy_flag = " [SUSPICIOUS ENTROPY]" if sec.is_suspicious_entropy else ""
         print(f"  Section: {sec.name}, VA: {sec.virtual_address_hex}, Size: {sec.virtual_size}, Entropy: {sec.entropy:.2f}, Permissions: {sec.permissions_str}{rwx_flag}{suspicious_entropy_flag}")
+        alerts = []
+        if sec.is_rwx:
+            alerts.append("RWX")
+        if sec.is_suspicious_entropy:
+            alerts.append("High entropy")
+        if sec.packet_warning and not alerts:
+            alerts.append("Packer indicator")
+        status = f"WARNING: {', '.join(alerts)}" if alerts else "OK"
+        print(f"  {sec.name:<12} {sec.virtual_address_hex:<18} {sec.virtual_size:>14,} {sec.entropy:>10.2f} {sec.permissions_str:<7} {status}")
+        if sec.packet_warning:
+            print(f"    Note: {sec.packet_warning}")
+    print("  " + "-" * 94)
 
 def print_imports (imports: List[ImportedDLL]) -> None:
     if not imports:
         print("No imported DLLs found.")
+        print("\n[Imports]\n  No imported DLLs found.")
         return
-
-    print("Imported DLLs and Functions:")
+ 
+    total_functions = sum(dll.function_count for dll in imports)
+    suspicious_functions = sum(func.is_suspicious for dll in imports for func in dll.functions)
+    print("\n[Imports]")
+    print(f"  {len(imports)} DLL(s), {total_functions} imported function(s), {suspicious_functions} suspicious")
     for dll in imports:
-        print(f"  DLL: {dll.dll_name} (Functions: {dll.function_count})")
+        print(f"\n  {dll.dll_name}  ({dll.function_count} function(s))")
+        print(f"    {'Function':<44} {'Address':<18} Status")
+        print("    " + "-" * 78)
         for func in dll.functions:
-            suspicious_flag = " [SUSPICIOUS]" if func.is_suspicious else ""
-            print(f"    Function: {func.display_name}, Address: {func.hex_address}{suspicious_flag}")
-    
+            status = "SUSPICIOUS" if func.is_suspicious else "OK"
+            print(f"    {func.display_name:<44} {func.hex_address:<18} {status}")
+
 def main() -> int:
     if len(sys.argv) < 2:
-        print("Usage: python3 pe_parser.py <path_to_file>")
+        print("Usage: python pe_parser.py <path_to_file> [additional_file ...]")
         return 1
-
+ 
     exit_code = 0
     for file_path in sys.argv[1:]:
-        # Validation of the PE file
+        print("\n" + "=" * 100)
+        print("PE ANALYSIS REPORT")
+        print("=" * 100)
+        print(f"File: {Path(file_path).resolve()}")
+         # Validation of the PE file
         result = PE_checker(file_path)
         status = "VALID" if result.isValid_PE else "INVALID"
         print(f"{result.path}: {status} - {result.reason}")
-
+        print(f"Validation: {status} — {result.reason}")
+ 
         if not result.isValid_PE:
             exit_code = 2
-
-        # Analyze with pefile
+            print("Analysis skipped because the file is not a valid PE file.")
+            continue
+ 
+         # Analyze with pefile
         try:
             info = parse_pe_info(file_path)
             print(f"Machine Type: {info.machine_name} ({info.machine_arch})")
@@ -452,19 +544,31 @@ def main() -> int:
             print(f"Entry Point VA: {info.entry_point_va_hex}")
             print(f"Is 64-bit: {info.is_64bit}")
             print(f"Number of Sections: {info.number_of_sections}")
-
+            print("\n[File Information]")
+            print(f"  Machine:          {info.machine_name} ({info.machine_arch})")
+            print(f"  Architecture:     {'64-bit' if info.is_64bit else '32-bit'}")
+            print(f"  Entry point RVA:  {info.entry_point_rva_hex}")
+            print(f"  Image base:       {info.image_base_hex}")
+            print(f"  Entry point VA:   {info.entry_point_va_hex}")
+            print(f"  Section count:    {info.number_of_sections}")
+            compile_time = str(info.compile_time) if info.compile_time is not None else "Not available"
+            print(f"  Compile time:     {compile_time} (Unix timestamp)")
+ 
             print_sections(info.sections)
             print_imports(info.imports)
-
+ 
             if info.compile_time is not None:
                 print(f"Compile Time (Unix Timestamp): {info.compile_time}")
             else:
                 print("Compile Time: Not available")
+            if info.packer_alerts:
+                print("\n[Security Notes]")
+                for alert in info.packer_alerts:
+                    print(f"  - {alert}")
         except ValueError as e:
             print(f"Error parsing PE info for {file_path}: {e}")
+            print(f"\nERROR: Could not parse PE information: {e}")
             exit_code = 2
-
-    return exit_code
 
 if __name__ == "__main__":
     sys.exit(main())
