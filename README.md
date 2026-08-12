@@ -174,6 +174,23 @@ python3 src/main.py --help
 | `-v, --verbose` | Enable verbose/debug logging |
 | `-h, --help` | Show usage information |
 
+### VirusTotal API Key Setup
+
+For testing or live VT lookups, set the key in your environment before calling the CLI:
+
+```bash
+export VT_API_KEY="your_virus_total_api_key_here"
+python3 src/main.py -f samples/helloWorld.exe --vt
+```
+
+Or pass it directly on the command line:
+
+```bash
+python3 src/main.py -f samples/helloWorld.exe --vt --api-key "your_virus_total_api_key_here"
+```
+
+> If `--vt` is enabled without a valid key, the analyzer will attempt to read `VT_API_KEY` from the environment and may report an auth or network error depending on connectivity.
+
 ---
 
 ## Sample Output
@@ -246,8 +263,14 @@ PE-Analyzer/
 VirusTotal API key can be provided either as a CLI flag or via environment variable:
 
 ```bash
-export VT_API_KEY=your_api_key_here
+export VT_API_KEY="your_api_key_here"
 python3 src/main.py -f samples/helloWorld.exe --vt
+```
+
+For testing in a local shell, you can also run:
+
+```bash
+python3 src/main.py -f samples/helloWorld.exe --vt --api-key "your_api_key_here"
 ```
 
 The blacklist of risky Windows APIs used for import scoring lives in `src/utils/` and can be extended with additional entries as needed.
