@@ -1,0 +1,46 @@
+{
+  "target_file": "/media/sf_Oracle-VM/project/PE-Analyzer/samples/helloWorld.exe",
+  "file_name": "helloWorld.exe",
+  "is_pe_file": false,
+  "hashing": {
+    "size_bytes": 16280,
+    "md5": "a6fa0cb723f9470ebaa2ddc59d941aa8",
+    "sha256": "768cc04c3fe05863b031a1673a135fb1118b0da83a0eb69744b4445929e7bace"
+  },
+  "pe_analysis": null,
+  "api_blacklist_analysis": null,
+  "ioc_strings": {
+    "total_strings_found": 84,
+    "ipv4_addresses": [],
+    "urls": [],
+    "domains": [
+      "ld-linux-x86-64.so",
+      "libc.so",
+      "helloWorld.cpp",
+      "note.gnu.property",
+      "note.gnu.build",
+      "gnu.hash",
+      "gnu.version",
+      "rela.dyn",
+      "rela.plt",
+      "plt.got",
+      "note.ABI",
+      "got.plt"
+    ],
+    "registry_keys": [],
+    "pe_filenames": []
+  },
+  "virustotal": {
+    "status": "error",
+    "error": "Error while sending request to VT API: HTTPSConnectionPool(host='www.virustotal.com', port=443): Max retries exceeded with url: /api/v3/files/768cc04c3fe05863b031a1673a135fb1118b0da83a0eb69744b4445929e7bace (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 403 Forbidden')))"
+  },
+  "overall_summary": {
+    "verdict": "BENIGN",
+    "risk_score": 0,
+    "warnings": [
+      "The provided file is not a valid PE file. Further PE analysis will be skipped.",
+      "Potential network IOCs (URLs/domains) were detected in the extracted strings.",
+      "VirusTotal API error: Error while sending request to VT API: HTTPSConnectionPool(host='www.virustotal.com', port=443): Max retries exceeded with url: /api/v3/files/768cc04c3fe05863b031a1673a135fb1118b0da83a0eb69744b4445929e7bace (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 403 Forbidden')))"
+    ]
+  }
+}

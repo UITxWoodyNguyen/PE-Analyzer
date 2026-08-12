@@ -267,7 +267,7 @@ class MalwareAnalysisPipeline:
             final_risk_score += report["api_blacklist_analysis"]["risk_score"] * 0.6
         if report.get("pe_analysis") and report["pe_analysis"].get("has_packed_sections"):
             final_risk_score += 30
-        if report.get("virustotal") and report["virustotal"].get("is_flagged"):
+        if report.get("virustotal") and report["virustotal"].get("status") == "ok" and report["virustotal"].get("is_flagged"):
             final_risk_score += 40
 
         final_risk_score = min(100, int(final_risk_score))
@@ -353,16 +353,21 @@ def format_text_report(report: Dict[str, Any]) -> str:
     vt = report.get("virustotal")
     if vt:
         lines.append("\n[5] VIRUSTOTAL THREAT INTELLIGENCE:")
-        if "error" in vt:
-            lines.append(f"  - Status: Error ({vt['error']})")
-        else:
-            lines.append(f"  - Detection Ratio  : {vt['detection_ratio']} engines flagged malicious")
-            lines.append(f"  - Full Report Link : {vt['permalink']}")
+        status = vt.get("status")
+        if status == "not_found":
+            lines.append(f"  - Status: Not found ({vt.get('message', 'Hash not found in VT database')})")
+        elif status == "error" or "error" in vt:
+            lines.append(f"  - Status: Error ({vt.get('error', vt.get('message', 'Unknown VirusTotal error'))})")
+        elif status == "ok":
+            lines.append(f"  - Detection Ratio  : {vt.get('detection_ratio', '0/0')} engines flagged malicious")
+            lines.append(f"  - Full Report Link : {vt.get('permalink', 'N/A')}")
             if vt.get("engine_detections"):
                 lines.append("  - Antivirus Detections:")
                 for av, name in vt["engine_detections"].items():
                     if name:
                         lines.append(f"      * {av:<15}: {name}")
+        else:
+            lines.append(f"  - Status: {status or 'Unknown'}")
 
     # 6. Final Verdict
     sum_rep = report["overall_summary"]
