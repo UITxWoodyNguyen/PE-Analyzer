@@ -1,6 +1,7 @@
 import io
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
@@ -9,6 +10,7 @@ if str(ROOT) not in sys.path:
 from rich.console import Console
 
 from src.main import MalwareAnalysisPipeline
+from src.services.vt_checker import VTNotFoundErrors
 from src.utils.display import render_rich_report
 
 
@@ -33,3 +35,14 @@ def test_render_rich_report_handles_valid_report(pe_x64_exe):
 
     output = out.getvalue()
     assert "STATIC MALWARE" in output or "Overall Assessment Summary" in output
+
+
+def test_unknown_vt_hash_is_reported_as_not_found(monkeypatch, pe_x64_exe):
+    pipeline = MalwareAnalysisPipeline(pe_x64_exe, query_vt=True, vt_api_key="test-key")
+
+    with patch("src.main.check_hash", side_effect=VTNotFoundErrors("File hash not found: {}")):
+        report = pipeline.run_analysis()
+
+    assert report["virustotal"]["status"] == "not_found"
+    assert "not found" in report["virustotal"]["message"].lower()
+    assert not any("VirusTotal API error" in w for w in report["overall_summary"]["warnings"])

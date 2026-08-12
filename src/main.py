@@ -34,7 +34,7 @@ from src.core.pe_parser import (
     ENTROPY_PACKED_THRESHOLD,
 )
 from src.core.string_extractor import extract_strings, StringExtractor
-from src.services.vt_checker import check_hash, VTErrors, VTResult
+from src.services.vt_checker import check_hash, VTErrors, VTNotFoundErrors, VTResult
 from src.utils.blacklist import summarize_api_risks
 from src.utils.display import render_rich_report, console
 
@@ -210,6 +210,7 @@ class MalwareAnalysisPipeline:
                 try:
                     vt_res: VTResult = check_hash(sha256, api_key=self.vt_api_key)
                     report["virustotal"] = {
+                        "status": "ok",
                         "malicious_detections": vt_res.malicious,
                         "total_engines": vt_res.total_engines,
                         "detection_ratio": f"{vt_res.malicious}/{vt_res.total_engines}",
@@ -221,8 +222,15 @@ class MalwareAnalysisPipeline:
                     
                     if vt_res.is_flagged:
                         warnings.append(f"VirusTotal flagged the file as malicious with {vt_res.malicious} detections out of {vt_res.total_engines} engines.")
+                except VTNotFoundErrors as e:
+                    report["virustotal"] = {
+                        "status": "not_found",
+                        "message": str(e),
+                        "hash": sha256,
+                    }
                 except VTErrors as e:
                     report["virustotal"] = {
+                        "status": "error",
                         "error": str(e)
                     }
                     warnings.append(f"VirusTotal API error: {str(e)}")

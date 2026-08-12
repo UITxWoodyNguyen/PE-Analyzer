@@ -282,8 +282,14 @@ def display_virustotal_panel(vt_data: Optional[Dict[str, Any]], c: Optional[Cons
     if not vt_data:
         return
 
-    if "error" in vt_data:
-        out.print(Panel(f"[red]VirusTotal Query Error:[/red] {vt_data['error']}", border_style="red"))
+    if vt_data.get("status") == "not_found":
+        message = vt_data.get("message", "Hash not found in VirusTotal database.")
+        out.print(Panel(f"[yellow]VirusTotal: hash not found[/yellow]\n[dim]{message}[/dim]", border_style="yellow"))
+        return
+
+    if vt_data.get("status") == "error" or "error" in vt_data:
+        msg = vt_data.get("error", "Unknown VirusTotal error")
+        out.print(Panel(f"[red]VirusTotal Query Error:[/red] {msg}", border_style="red"))
         return
 
     malicious = vt_data.get("malicious_detections", 0)
