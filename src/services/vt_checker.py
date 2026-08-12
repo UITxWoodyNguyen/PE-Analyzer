@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 import requests
 import os
 import re
+from pathlib import Path
 
 # Custom Exceptions
 
@@ -33,6 +34,37 @@ class VTRequestErrors (VTErrors):
     # Exception for request errors
     pass
 
+
+def _load_dotenv() -> Optional[str]:
+    """Read VT_API_KEY from a local .env file if it has not already been set."""
+
+    if os.getenv("VT_API_KEY"):
+        return os.getenv("VT_API_KEY")
+
+    candidate_paths = [Path.cwd() / ".env"]
+
+    for dotenv_path in candidate_paths:
+        if not dotenv_path.is_file():
+            continue
+
+        try:
+            for raw_line in dotenv_path.read_text(encoding="utf-8").splitlines():
+                line = raw_line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+
+                key, value = line.split("=", 1)
+                if key.strip() != "VT_API_KEY":
+                    continue
+
+                cleaned_value = value.strip().strip('"').strip("'")
+                if cleaned_value:
+                    return cleaned_value
+        except OSError:
+            return None
+
+    return None
+
 # Dataclass for VT API response
 @dataclass
 class VTResult:
@@ -47,13 +79,13 @@ class VTResult:
 # Helper function to interact with the VT API
 def get_API_key() -> str:
     '''
-    This function retrieves the VT API key from the environment variable 'VT_API_KEY'
+    This function retrieves the VT API key from a local .env file or the environment variable 'VT_API_KEY'
     Return 'VTAuthErrors' if the key is not found.
     '''
 
-    api_key = os.getenv('VT_API_KEY')
+    api_key = os.getenv('VT_API_KEY') or _load_dotenv()
     if not api_key:
-        raise VTAuthErrors("VT API key not found in environment variables. Please set 'VT_API_KEY'.")
+        raise VTAuthErrors("VT API key not found. Create a .env file with VT_API_KEY=your_key or set the environment variable.")
     return api_key
 
 def _validate_hash (file_hash: str) -> bool:

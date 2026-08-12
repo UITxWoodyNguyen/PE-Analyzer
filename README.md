@@ -169,27 +169,28 @@ python3 src/main.py --help
 | `-o, --output` | Path to write the exported report |
 | `--format` | Report export format: `json` (default) or `text` |
 | `--vt` | Enable VirusTotal hash lookup |
-| `--api-key` | VirusTotal API key (or set `VT_API_KEY` env var) |
+| `--api-key` | VirusTotal API key (optional override if you do not want to use `.env`) |
 | `--fast` | Metadata-only fast-path parsing, skips deep string extraction |
 | `-v, --verbose` | Enable verbose/debug logging |
 | `-h, --help` | Show usage information |
 
 ### VirusTotal API Key Setup
 
-For testing or live VT lookups, set the key in your environment before calling the CLI:
+For testing or live VT lookups, add the key to a local `.env` file in the project root:
 
 ```bash
-export VT_API_KEY="your_virus_total_api_key_here"
-python3 src/main.py -f samples/helloWorld.exe --vt
+VT_API_KEY="your_virus_total_api_key_here"
 ```
 
-Or pass it directly on the command line:
+With that file in place, the analyzer loads `VT_API_KEY` automatically when `--vt` is enabled.
+
+Or pass it directly on the command line if you want to override the environment for one run:
 
 ```bash
 python3 src/main.py -f samples/helloWorld.exe --vt --api-key "your_virus_total_api_key_here"
 ```
 
-> If `--vt` is enabled without a valid key, the analyzer will attempt to read `VT_API_KEY` from the environment and may report an auth or network error depending on connectivity.
+> If `--vt` is enabled without a valid key, the analyzer will attempt to read `VT_API_KEY` from `.env` first and then from the environment, and may report an auth or network error depending on connectivity.
 
 ---
 
@@ -253,17 +254,25 @@ PE-Analyzer/
 
 ## Configuration
 
-VirusTotal API key can be provided either as a CLI flag or via environment variable:
+VirusTotal API key can be provided via a local `.env` file, a CLI flag, or an environment variable:
+
+```bash
+VT_API_KEY="your_api_key_here"
+```
+
+With that file in the project root, the analyzer will load the key automatically when `--vt` is enabled.
+
+For testing in a local shell, you can still pass the key directly:
+
+```bash
+python3 src/main.py -f samples/helloWorld.exe --vt --api-key "your_api_key_here"
+```
+
+If you prefer shell environment variables, that still works too:
 
 ```bash
 export VT_API_KEY="your_api_key_here"
 python3 src/main.py -f samples/helloWorld.exe --vt
-```
-
-For testing in a local shell, you can also run:
-
-```bash
-python3 src/main.py -f samples/helloWorld.exe --vt --api-key "your_api_key_here"
 ```
 
 The blacklist of risky Windows APIs used for import scoring lives in `src/utils/` and can be extended with additional entries as needed.

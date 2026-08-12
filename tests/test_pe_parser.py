@@ -31,6 +31,7 @@ def make_section(**overrides: object) -> pe_parser.PESectionInfo:
         "virtual_address_hex": "0x00001000",
         "virtual_size": 4096,
         "raw_pointer": 0x400,
+        "raw_size": 1024,
         "entropy": 6.12,
         "is_readable": True,
         "is_writable": False,

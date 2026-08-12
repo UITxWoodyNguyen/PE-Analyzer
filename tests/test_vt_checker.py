@@ -53,14 +53,23 @@ def test_valid_hash_format (good_hash):
     assert result.file_hash == good_hash
 
 # API Key Handling
-def test_API_key_raises_when_missing (monkeypatch):
+def test_API_key_raises_when_missing (monkeypatch, tmp_path):
     monkeypatch.delenv("VT_API_KEY", raising = False)
+    monkeypatch.chdir(tmp_path)
     with pytest.raises(VTAuthErrors):
         get_API_key()
 
 def test_API_key_read_from_env (monkeypatch):
     monkeypatch.setenv("VT_API_KEY", "env_key")
     assert get_API_key() == "env_key"
+
+
+def test_API_key_read_from_dotenv(monkeypatch, tmp_path):
+    monkeypatch.delenv("VT_API_KEY", raising=False)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text('VT_API_KEY="dotenv_key"\n', encoding="utf-8")
+
+    assert get_API_key() == "dotenv_key"
 
 def test_check_hash_uses_env_key_when_not_passed (monkeypatch):
     monkeypatch.setenv("VT_API_KEY", "env_key_value")
@@ -71,6 +80,20 @@ def test_check_hash_uses_env_key_when_not_passed (monkeypatch):
 
     called_headers = session.get.call_args[1]["headers"]
     assert called_headers["x-apikey"] == "env_key_value"
+
+
+def test_check_hash_uses_dotenv_key_when_not_passed(monkeypatch, tmp_path):
+    monkeypatch.delenv("VT_API_KEY", raising=False)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text("VT_API_KEY=dotenv_session_key\n", encoding="utf-8")
+
+    payload = {"data": {"attributes": {"last_analysis_stats": {"malicious": 0, "harmless": 1, "suspicious": 0, "undetected": 0, "timeout": 0}}}}
+    session = _mock_session(_mock_response(200, json_data = payload))
+
+    check_hash(VALID_SHA256, session = session)
+
+    called_headers = session.get.call_args[1]["headers"]
+    assert called_headers["x-apikey"] == "dotenv_session_key"
 
 # Parse HTTP 200 response
 def test_parses_clean_file_correctly():
