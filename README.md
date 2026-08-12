@@ -1,4 +1,4 @@
-# PE Analyzer
+<h1 align="center">MINIPROJECT - PE Analyzer</h1>
 
 <p align="center">
   <img alt="PE Analyzer" src="https://img.shields.io/badge/PE-Analyzer-1B1F23?style=for-the-badge&logo=python&logoColor=white" />
