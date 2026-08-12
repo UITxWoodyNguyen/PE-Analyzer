@@ -15,19 +15,32 @@ from src.utils.blacklist import (
     reload_database,
 )
 
-from src.utils.display import (
-    console,
-    render_banner,
-    display_file_summary,
-    display_pe_header,
-    display_sections_table,
-    display_blacklist_apis,
-    display_import_tree,
-    display_ioc_strings,
-    display_virustotal_panel,
-    display_overall_verdict,
-    render_rich_report,
-)
+try:
+    from src.utils.display import (
+        console,
+        render_banner,
+        display_file_summary,
+        display_pe_header,
+        display_sections_table,
+        display_blacklist_apis,
+        display_import_tree,
+        display_ioc_strings,
+        display_virustotal_panel,
+        display_overall_verdict,
+        render_rich_report,
+    )
+except ModuleNotFoundError:
+    console = None
+    render_banner = None
+    display_file_summary = None
+    display_pe_header = None
+    display_sections_table = None
+    display_blacklist_apis = None
+    display_import_tree = None
+    display_ioc_strings = None
+    display_virustotal_panel = None
+    display_overall_verdict = None
+    render_rich_report = None
 
 __all__ = [
     # Blacklist
