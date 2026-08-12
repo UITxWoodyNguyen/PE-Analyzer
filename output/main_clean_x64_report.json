@@ -1,0 +1,610 @@
+{
+  "target_file": "/home/kali/Desktop/malware-bin/main_clean_x64.exe",
+  "file_name": "main_clean_x64.exe",
+  "is_pe_file": true,
+  "hashing": {
+    "size_bytes": 267849,
+    "md5": "dc5daec96cc0fc11da58203b35a871eb",
+    "sha256": "f7fd7b7f77a6aac4e14e5f3c621918d9f87dc63038e076a24e9d142120e60510"
+  },
+  "pe_analysis": {
+    "machine_type": "x64 (AMD64)",
+    "machine_name": "IMAGE_FILE_MACHINE_AMD64",
+    "architecture": "64-bit (PE32+)",
+    "entry_point_rva": "0x0000000000001440",
+    "entry_point_va": "0x0000000140001440",
+    "image_base": "0x0000000140000000",
+    "total_sections": 18,
+    "has_packed_sections": false,
+    "packer_alerts": [],
+    "sections": [
+      {
+        "name": ".text",
+        "virtual_address": "0x1000",
+        "virtual_size": 31664,
+        "raw_size": 31744,
+        "entropy": 6.2189,
+        "permissions": "R-X",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".data",
+        "virtual_address": "0x9000",
+        "virtual_size": 304,
+        "raw_size": 512,
+        "entropy": 1.3026,
+        "permissions": "RW-",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".rdata",
+        "virtual_address": "0xa000",
+        "virtual_size": 4168,
+        "raw_size": 4608,
+        "entropy": 4.4226,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".pdata",
+        "virtual_address": "0xc000",
+        "virtual_size": 1140,
+        "raw_size": 1536,
+        "entropy": 3.3207,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".xdata",
+        "virtual_address": "0xd000",
+        "virtual_size": 1008,
+        "raw_size": 1024,
+        "entropy": 4.1332,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".bss",
+        "virtual_address": "0xe000",
+        "virtual_size": 2960,
+        "raw_size": 0,
+        "entropy": 0.0,
+        "permissions": "RW-",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".idata",
+        "virtual_address": "0xf000",
+        "virtual_size": 1920,
+        "raw_size": 2048,
+        "entropy": 3.812,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".tls",
+        "virtual_address": "0x10000",
+        "virtual_size": 16,
+        "raw_size": 512,
+        "entropy": 0.0,
+        "permissions": "RW-",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".reloc",
+        "virtual_address": "0x11000",
+        "virtual_size": 132,
+        "raw_size": 512,
+        "entropy": 1.6161,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/4",
+        "virtual_address": "0x12000",
+        "virtual_size": 1888,
+        "raw_size": 2048,
+        "entropy": 1.7028,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/19",
+        "virtual_address": "0x13000",
+        "virtual_size": 79001,
+        "raw_size": 79360,
+        "entropy": 5.8092,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/31",
+        "virtual_address": "0x27000",
+        "virtual_size": 14577,
+        "raw_size": 14848,
+        "entropy": 4.8386,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/45",
+        "virtual_address": "0x2b000",
+        "virtual_size": 31215,
+        "raw_size": 31232,
+        "entropy": 5.0542,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/57",
+        "virtual_address": "0x33000",
+        "virtual_size": 5664,
+        "raw_size": 6144,
+        "entropy": 4.2661,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/70",
+        "virtual_address": "0x35000",
+        "virtual_size": 920,
+        "raw_size": 1024,
+        "entropy": 4.6132,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/81",
+        "virtual_address": "0x36000",
+        "virtual_size": 6777,
+        "raw_size": 7168,
+        "entropy": 4.6096,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/97",
+        "virtual_address": "0x38000",
+        "virtual_size": 34355,
+        "raw_size": 34816,
+        "entropy": 5.8809,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/113",
+        "virtual_address": "0x41000",
+        "virtual_size": 1468,
+        "raw_size": 1536,
+        "entropy": 5.8381,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      }
+    ],
+    "imported_dlls": [
+      {
+        "dll_name": "KERNEL32.dll",
+        "function_count": 17,
+        "functions": [
+          {
+            "name": "DeleteCriticalSection",
+            "address": "0x14000F1F0",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "EnterCriticalSection",
+            "address": "0x14000F1F8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "GetCPInfo",
+            "address": "0x14000F200",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "GetCurrentProcessId",
+            "address": "0x14000F208",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "GetLastError",
+            "address": "0x14000F210",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "GetModuleHandleA",
+            "address": "0x14000F218",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "GetProcAddress",
+            "address": "0x14000F220",
+            "is_ordinal": false,
+            "is_suspicious": true
+          },
+          {
+            "name": "GetSystemInfo",
+            "address": "0x14000F228",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "InitializeCriticalSection",
+            "address": "0x14000F230",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "LeaveCriticalSection",
+            "address": "0x14000F238",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "MultiByteToWideChar",
+            "address": "0x14000F240",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "SetUnhandledExceptionFilter",
+            "address": "0x14000F248",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "Sleep",
+            "address": "0x14000F250",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "TlsGetValue",
+            "address": "0x14000F258",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "VirtualProtect",
+            "address": "0x14000F260",
+            "is_ordinal": false,
+            "is_suspicious": true
+          },
+          {
+            "name": "VirtualQuery",
+            "address": "0x14000F268",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "WideCharToMultiByte",
+            "address": "0x14000F270",
+            "is_ordinal": false,
+            "is_suspicious": false
+          }
+        ]
+      },
+      {
+        "dll_name": "msvcrt.dll",
+        "function_count": 35,
+        "functions": [
+          {
+            "name": "__C_specific_handler",
+            "address": "0x14000F280",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "___lc_codepage_func",
+            "address": "0x14000F288",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "___mb_cur_max_func",
+            "address": "0x14000F290",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "__getmainargs",
+            "address": "0x14000F298",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "__initenv",
+            "address": "0x14000F2A0",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "__iob_func",
+            "address": "0x14000F2A8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "__set_app_type",
+            "address": "0x14000F2B0",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "__setusermatherr",
+            "address": "0x14000F2B8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "_amsg_exit",
+            "address": "0x14000F2C0",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "_cexit",
+            "address": "0x14000F2C8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "_commode",
+            "address": "0x14000F2D0",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "_errno",
+            "address": "0x14000F2D8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "_fmode",
+            "address": "0x14000F2E0",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "_initterm",
+            "address": "0x14000F2E8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "_lock",
+            "address": "0x14000F2F0",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "_unlock",
+            "address": "0x14000F2F8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "abort",
+            "address": "0x14000F300",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "atexit",
+            "address": "0x14000F308",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "calloc",
+            "address": "0x14000F310",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "exit",
+            "address": "0x14000F318",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "fflush",
+            "address": "0x14000F320",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "fprintf",
+            "address": "0x14000F328",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "fputc",
+            "address": "0x14000F330",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "free",
+            "address": "0x14000F338",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "localeconv",
+            "address": "0x14000F340",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "malloc",
+            "address": "0x14000F348",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "memcpy",
+            "address": "0x14000F350",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "puts",
+            "address": "0x14000F358",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "setvbuf",
+            "address": "0x14000F360",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "signal",
+            "address": "0x14000F368",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "strerror",
+            "address": "0x14000F370",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "strlen",
+            "address": "0x14000F378",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "strncmp",
+            "address": "0x14000F380",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "vfprintf",
+            "address": "0x14000F388",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "wcslen",
+            "address": "0x14000F390",
+            "is_ordinal": false,
+            "is_suspicious": false
+          }
+        ]
+      }
+    ]
+  },
+  "api_blacklist_analysis": {
+    "total_blacklisted_apis": 2,
+    "risk_score": 20,
+    "risk_level": "MEDIUM",
+    "severity_counts": {
+      "CRITICAL": 0,
+      "HIGH": 1,
+      "MEDIUM": 1,
+      "LOW": 0
+    },
+    "categories": {
+      "Memory Manipulation": [
+        "VirtualProtect"
+      ],
+      "Dynamic Loading": [
+        "GetProcAddress"
+      ]
+    },
+    "detected_apis": [
+      {
+        "name": "VirtualProtect",
+        "category": "Memory Manipulation",
+        "severity": "HIGH",
+        "description": "Changes memory-protection permissions, for example from RW to RWX so injected code can execute.",
+        "mitre_technique": "T1055 - Process Injection"
+      },
+      {
+        "name": "GetProcAddress",
+        "category": "Dynamic Loading",
+        "severity": "MEDIUM",
+        "description": "Dynamically retrieves an exported function's address to conceal the import table from static analysis.",
+        "mitre_technique": "T1027.007 - Dynamic API Resolution"
+      }
+    ]
+  },
+  "ioc_strings": {
+    "total_strings_found": 4662,
+    "ipv4_addresses": [],
+    "urls": [],
+    "domains": [
+      "kernel32.dll",
+      "KERNEL32.dll",
+      "msvcrt.dll",
+      "text.startup",
+      "xdata.startup",
+      "pdata.startup"
+    ],
+    "registry_keys": [],
+    "pe_filenames": [
+      "kernel32.dll",
+      "KERNEL32.dll",
+      "msvcrt.dll"
+    ]
+  },
+  "virustotal": null,
+  "overall_summary": {
+    "verdict": "BENIGN",
+    "risk_score": 12,
+    "warnings": [
+      "Detected 2 blacklisted API(s) which may indicate malicious behavior.",
+      "Potential network IOCs (URLs/domains) were detected in the extracted strings."
+    ]
+  }
+}

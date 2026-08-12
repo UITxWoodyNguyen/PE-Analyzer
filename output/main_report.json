@@ -1,0 +1,701 @@
+{
+  "target_file": "/home/kali/Desktop/malware-bin/main.exe",
+  "file_name": "main.exe",
+  "is_pe_file": true,
+  "hashing": {
+    "size_bytes": 131036,
+    "md5": "f2032ef38d104ee0c025b31e0a2b10a6",
+    "sha256": "9e286d379c8bac8da1368155f28b80c0a322714d07fc5f3ebd759b8be367163e"
+  },
+  "pe_analysis": {
+    "machine_type": "x64 (AMD64)",
+    "machine_name": "IMAGE_FILE_MACHINE_AMD64",
+    "architecture": "64-bit (PE32+)",
+    "entry_point_rva": "0x0000000000001440",
+    "entry_point_va": "0x0000000140001440",
+    "image_base": "0x0000000140000000",
+    "total_sections": 18,
+    "has_packed_sections": false,
+    "packer_alerts": [],
+    "sections": [
+      {
+        "name": ".text",
+        "virtual_address": "0x1000",
+        "virtual_size": 7296,
+        "raw_size": 7680,
+        "entropy": 5.7428,
+        "permissions": "R-X",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".data",
+        "virtual_address": "0x3000",
+        "virtual_size": 256,
+        "raw_size": 512,
+        "entropy": 1.1496,
+        "permissions": "RW-",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".rdata",
+        "virtual_address": "0x4000",
+        "virtual_size": 3464,
+        "raw_size": 3584,
+        "entropy": 4.1972,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".pdata",
+        "virtual_address": "0x5000",
+        "virtual_size": 612,
+        "raw_size": 1024,
+        "entropy": 2.5479,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".xdata",
+        "virtual_address": "0x6000",
+        "virtual_size": 444,
+        "raw_size": 512,
+        "entropy": 3.2642,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".bss",
+        "virtual_address": "0x7000",
+        "virtual_size": 384,
+        "raw_size": 0,
+        "entropy": 0.0,
+        "permissions": "RW-",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".idata",
+        "virtual_address": "0x8000",
+        "virtual_size": 2100,
+        "raw_size": 2560,
+        "entropy": 3.4953,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".tls",
+        "virtual_address": "0x9000",
+        "virtual_size": 16,
+        "raw_size": 512,
+        "entropy": 0.0,
+        "permissions": "RW-",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": ".reloc",
+        "virtual_address": "0xa000",
+        "virtual_size": 120,
+        "raw_size": 512,
+        "entropy": 1.5733,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/4",
+        "virtual_address": "0xb000",
+        "virtual_size": 1216,
+        "raw_size": 1536,
+        "entropy": 1.3996,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/19",
+        "virtual_address": "0xc000",
+        "virtual_size": 42769,
+        "raw_size": 43008,
+        "entropy": 5.862,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/31",
+        "virtual_address": "0x17000",
+        "virtual_size": 7841,
+        "raw_size": 8192,
+        "entropy": 4.7709,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/45",
+        "virtual_address": "0x19000",
+        "virtual_size": 7842,
+        "raw_size": 8192,
+        "entropy": 4.8022,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/57",
+        "virtual_address": "0x1b000",
+        "virtual_size": 2080,
+        "raw_size": 2560,
+        "entropy": 3.444,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/70",
+        "virtual_address": "0x1c000",
+        "virtual_size": 743,
+        "raw_size": 1024,
+        "entropy": 4.115,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/81",
+        "virtual_address": "0x1d000",
+        "virtual_size": 4143,
+        "raw_size": 4608,
+        "entropy": 4.5211,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/97",
+        "virtual_address": "0x1f000",
+        "virtual_size": 5202,
+        "raw_size": 5632,
+        "entropy": 4.8961,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      },
+      {
+        "name": "/113",
+        "virtual_address": "0x21000",
+        "virtual_size": 396,
+        "raw_size": 512,
+        "entropy": 4.0493,
+        "permissions": "R--",
+        "is_rwx": false,
+        "is_high_entropy": false,
+        "warning": null
+      }
+    ],
+    "imported_dlls": [
+      {
+        "dll_name": "ADVAPI32.dll",
+        "function_count": 3,
+        "functions": [
+          {
+            "name": "RegCloseKey",
+            "address": "0x140008240",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "RegOpenKeyExA",
+            "address": "0x140008248",
+            "is_ordinal": false,
+            "is_suspicious": true
+          },
+          {
+            "name": "RegSetValueExA",
+            "address": "0x140008250",
+            "is_ordinal": false,
+            "is_suspicious": true
+          }
+        ]
+      },
+      {
+        "dll_name": "KERNEL32.dll",
+        "function_count": 19,
+        "functions": [
+          {
+            "name": "CloseHandle",
+            "address": "0x140008260",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "CreateRemoteThread",
+            "address": "0x140008268",
+            "is_ordinal": false,
+            "is_suspicious": true
+          },
+          {
+            "name": "DeleteCriticalSection",
+            "address": "0x140008270",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "EnterCriticalSection",
+            "address": "0x140008278",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "ExitProcess",
+            "address": "0x140008280",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "GetCurrentProcessId",
+            "address": "0x140008288",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "GetLastError",
+            "address": "0x140008290",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "InitializeCriticalSection",
+            "address": "0x140008298",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "IsDebuggerPresent",
+            "address": "0x1400082A0",
+            "is_ordinal": false,
+            "is_suspicious": true
+          },
+          {
+            "name": "LeaveCriticalSection",
+            "address": "0x1400082A8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "OpenProcess",
+            "address": "0x1400082B0",
+            "is_ordinal": false,
+            "is_suspicious": true
+          },
+          {
+            "name": "SetUnhandledExceptionFilter",
+            "address": "0x1400082B8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "Sleep",
+            "address": "0x1400082C0",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "TlsGetValue",
+            "address": "0x1400082C8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "VirtualAlloc",
+            "address": "0x1400082D0",
+            "is_ordinal": false,
+            "is_suspicious": true
+          },
+          {
+            "name": "VirtualFree",
+            "address": "0x1400082D8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "VirtualProtect",
+            "address": "0x1400082E0",
+            "is_ordinal": false,
+            "is_suspicious": true
+          },
+          {
+            "name": "VirtualQuery",
+            "address": "0x1400082E8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "WriteProcessMemory",
+            "address": "0x1400082F0",
+            "is_ordinal": false,
+            "is_suspicious": true
+          }
+        ]
+      },
+      {
+        "dll_name": "msvcrt.dll",
+        "function_count": 25,
+        "functions": [
+          {
+            "name": "__C_specific_handler",
+            "address": "0x140008300",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "__getmainargs",
+            "address": "0x140008308",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "__initenv",
+            "address": "0x140008310",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "__iob_func",
+            "address": "0x140008318",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "__set_app_type",
+            "address": "0x140008320",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "__setusermatherr",
+            "address": "0x140008328",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "_amsg_exit",
+            "address": "0x140008330",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "_cexit",
+            "address": "0x140008338",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "_commode",
+            "address": "0x140008340",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "_fmode",
+            "address": "0x140008348",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "_initterm",
+            "address": "0x140008350",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "abort",
+            "address": "0x140008358",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "atexit",
+            "address": "0x140008360",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "calloc",
+            "address": "0x140008368",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "exit",
+            "address": "0x140008370",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "fflush",
+            "address": "0x140008378",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "fprintf",
+            "address": "0x140008380",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "free",
+            "address": "0x140008388",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "malloc",
+            "address": "0x140008390",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "memcpy",
+            "address": "0x140008398",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "setvbuf",
+            "address": "0x1400083A0",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "signal",
+            "address": "0x1400083A8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "strlen",
+            "address": "0x1400083B0",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "strncmp",
+            "address": "0x1400083B8",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "vfprintf",
+            "address": "0x1400083C0",
+            "is_ordinal": false,
+            "is_suspicious": false
+          }
+        ]
+      },
+      {
+        "dll_name": "WININET.dll",
+        "function_count": 3,
+        "functions": [
+          {
+            "name": "InternetCloseHandle",
+            "address": "0x1400083D0",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "InternetOpenA",
+            "address": "0x1400083D8",
+            "is_ordinal": false,
+            "is_suspicious": true
+          },
+          {
+            "name": "InternetOpenUrlA",
+            "address": "0x1400083E0",
+            "is_ordinal": false,
+            "is_suspicious": true
+          }
+        ]
+      },
+      {
+        "dll_name": "WS2_32.dll",
+        "function_count": 2,
+        "functions": [
+          {
+            "name": "WSACleanup",
+            "address": "0x1400083F0",
+            "is_ordinal": false,
+            "is_suspicious": false
+          },
+          {
+            "name": "WSAStartup",
+            "address": "0x1400083F8",
+            "is_ordinal": false,
+            "is_suspicious": true
+          }
+        ]
+      }
+    ]
+  },
+  "api_blacklist_analysis": {
+    "total_blacklisted_apis": 8,
+    "risk_score": 100,
+    "risk_level": "CRITICAL",
+    "severity_counts": {
+      "CRITICAL": 2,
+      "HIGH": 4,
+      "MEDIUM": 1,
+      "LOW": 1
+    },
+    "categories": {
+      "Process Injection": [
+        "CreateRemoteThread",
+        "WriteProcessMemory"
+      ],
+      "Persistence": [
+        "RegSetValueExA"
+      ],
+      "Memory Manipulation": [
+        "VirtualAlloc",
+        "VirtualProtect"
+      ],
+      "Network & C2": [
+        "InternetOpenUrlA",
+        "WSAStartup"
+      ],
+      "Anti-Analysis": [
+        "IsDebuggerPresent"
+      ]
+    },
+    "detected_apis": [
+      {
+        "name": "CreateRemoteThread",
+        "category": "Process Injection",
+        "severity": "CRITICAL",
+        "description": "Creates a thread that executes in another process's memory space (used for DLL or shellcode injection).",
+        "mitre_technique": "T1055.001 - Dynamic-link Library Injection"
+      },
+      {
+        "name": "WriteProcessMemory",
+        "category": "Process Injection",
+        "severity": "CRITICAL",
+        "description": "Writes data or executable code directly into the target process's memory.",
+        "mitre_technique": "T1055 - Process Injection"
+      },
+      {
+        "name": "RegSetValueExA",
+        "category": "Persistence",
+        "severity": "HIGH",
+        "description": "Writes or modifies a Registry value, often to create a Run key for automatic startup with Windows.",
+        "mitre_technique": "T1547.001 - Registry Run Keys"
+      },
+      {
+        "name": "VirtualAlloc",
+        "category": "Memory Manipulation",
+        "severity": "HIGH",
+        "description": "Allocates a new memory region, often requesting PAGE_EXECUTE_READWRITE permissions to hold shellcode.",
+        "mitre_technique": "T1055 - Process Injection"
+      },
+      {
+        "name": "VirtualProtect",
+        "category": "Memory Manipulation",
+        "severity": "HIGH",
+        "description": "Changes memory-protection permissions, for example from RW to RWX so injected code can execute.",
+        "mitre_technique": "T1055 - Process Injection"
+      },
+      {
+        "name": "InternetOpenUrlA",
+        "category": "Network & C2",
+        "severity": "HIGH",
+        "description": "Opens a connection to a remote URL to send a beacon or receive C2 commands.",
+        "mitre_technique": "T1071.001 - Web Protocols"
+      },
+      {
+        "name": "IsDebuggerPresent",
+        "category": "Anti-Analysis",
+        "severity": "MEDIUM",
+        "description": "Checks whether the process is being monitored by an attached debugger.",
+        "mitre_technique": "T1497.001 - System Checks"
+      },
+      {
+        "name": "WSAStartup",
+        "category": "Network & C2",
+        "severity": "LOW",
+        "description": "Initializes the Winsock library to establish TCP or UDP network socket connections.",
+        "mitre_technique": "T1071 - Application Layer Protocol"
+      }
+    ]
+  },
+  "ioc_strings": {
+    "total_strings_found": 3039,
+    "ipv4_addresses": [
+      "192.168.100.200"
+    ],
+    "urls": [
+      "https://ransom-payment.onion/recover",
+      "http://c2-malware-server.xyz/beacon.php?id=1337"
+    ],
+    "domains": [
+      "malware.exe",
+      "explorer.exe",
+      "svchost.exe",
+      "backup-gateway.botnet-network.org",
+      "ADVAPI32.dll",
+      "KERNEL32.dll",
+      "msvcrt.dll",
+      "WININET.dll",
+      "main.cpp",
+      "text.startup",
+      "xdata.startup",
+      "pdata.startup"
+    ],
+    "registry_keys": [
+      "HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run"
+    ],
+    "pe_filenames": [
+      "C:\\Users\\Public\\malware.exe",
+      "C:\\Windows\\System32\\explorer.exe",
+      "C:\\Windows\\System32\\explorer.exe",
+      "svchost.exe",
+      "ADVAPI32.dll",
+      "KERNEL32.dll",
+      "msvcrt.dll",
+      "WININET.dll",
+      "WS2_32.dll"
+    ]
+  },
+  "virustotal": null,
+  "overall_summary": {
+    "verdict": "MALICIOUS",
+    "risk_score": 60,
+    "warnings": [
+      "Detected 8 blacklisted API(s) which may indicate malicious behavior.",
+      "Potential network IOCs (URLs/domains) were detected in the extracted strings."
+    ]
+  }
+}
