@@ -1,0 +1,3 @@
+# Bỏ qua toàn bộ file kết quả sinh ra trong output/ nhưng giữ lại file .gitkeep
+output/*
+!output/.gitkeep
