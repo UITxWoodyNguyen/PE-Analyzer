@@ -197,19 +197,11 @@ python3 src/main.py -f samples/helloWorld.exe --vt --api-key "your_virus_total_a
 
 Terminal report (abridged):
 
-```text
-┌──────────────────────────── PE Analyzer Report ────────────────────────────┐
-│ File:        helloWorld.exe                                                │
-│ MD5:         e99a18c428cb38d5f260853678922e03                              │
-│ SHA-256:     2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886...  │
-│ Compiled:    2024-11-02 14:03:11 UTC                                       │
-│ Risk Score:  MEDIUM (42/100)                                               │
-├──────────────────────────────────────────────────────────────────────────┤
-│ Sections: 4   |  High-Entropy Sections: 1 (.text - 7.2)                   │
-│ Blacklisted Imports: 3  (VirtualAllocEx, WriteProcessMemory, CreateRemoteThread) │
-│ IOCs Found: 2 URLs, 1 IPv4                                                 │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+![alt text](img/image.png)
+
+![alt text](img/image-1.png)
+
+![alt text](img/image-2.png)
 
 ---
 
@@ -242,6 +234,7 @@ Exported JSON reports follow this general shape:
 ```text
 PE-Analyzer/
 ├── docs/                     # Project notes and analysis documentation
+├── img/                      # Picture in README.md
 ├── output/                   # Generated analysis reports
 ├── samples/                  # Sample PE binaries and demonstration files
 ├── src/                      # Application source code
