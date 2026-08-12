@@ -36,6 +36,8 @@ from src.core.pe_parser import (
 from src.core.string_extractor import extract_strings, StringExtractor
 from src.services.vt_checker import check_hash, VTErrors, VTNotFoundErrors, VTResult
 from src.utils.blacklist import summarize_api_risks
+from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
+
 from src.utils.display import render_rich_report, console
 
 class MalwareAnalysisPipeline:
@@ -57,7 +59,7 @@ class MalwareAnalysisPipeline:
         if not self.target_path.is_file():
             raise FileNotFoundError(f"File not found: {self.target_path}")
         
-    def run_analysis (self) -> Dict[str, Any]:
+    def run_analysis (self, progress: Optional[Progress] = None) -> Dict[str, Any]:
         report: Dict[str, Any] = {
             "target_file": str(self.target_path),
             "file_name": self.target_path.name,
@@ -73,7 +75,17 @@ class MalwareAnalysisPipeline:
                 "warnings": [],
             }
         }
-        
+
+        task_id = None
+        if progress is not None:
+            task_id = progress.add_task("[cyan]Analyzing PE file...[/cyan]", total=100)
+
+        def advance(value: int, description: Optional[str] = None) -> None:
+            if progress is not None and task_id is not None:
+                if description is not None:
+                    progress.update(task_id, description=description)
+                progress.update(task_id, advance=value)
+
         warnings: List[str] = []
         
         # Step 1: Calculate hashes
@@ -84,8 +96,10 @@ class MalwareAnalysisPipeline:
                 "md5": hash_res.md5_hash,
                 "sha256": hash_res.sha256_hash,
             }
+            advance(20, "[cyan]Hashing file...[/cyan]")
         except HashError as e:
             warnings.append(f"Hashing error: {str(e)}")
+            advance(20, "[yellow]Hashing skipped[/yellow]")
             
         # Step 2: Parse PE Structure
         pe_check: PECheckResult = PE_checker(self.target_path)
@@ -147,7 +161,9 @@ class MalwareAnalysisPipeline:
                 
                 if pe_info.has_packed_sections:
                     warnings.append("The PE file contains sections that may be packed or compressed, which is often used by malware to evade detection.")
-                    
+
+                advance(25, "[cyan]Parsing PE structure...[/cyan]")
+
                 # Step 3: Compare with API blacklist
                 all_imported_apis = [
                     fn.name for dll in pe_info.imports for fn in dll.functions if fn.name
@@ -174,7 +190,9 @@ class MalwareAnalysisPipeline:
                 
                 if api_risk["total_blacklisted_apis"] > 0:
                     warnings.append(f"Detected {api_risk['total_blacklisted_apis']} blacklisted API(s) which may indicate malicious behavior.")
-                    
+
+                advance(15, "[cyan]Scanning blacklisted APIs...[/cyan]")
+
             except Exception as e:
                 warnings.append(f"PE parsing error: {str(e)}")
         else:
@@ -200,14 +218,18 @@ class MalwareAnalysisPipeline:
             if report["ioc_strings"]["urls"] or report["ioc_strings"]["ipv4_addresses"] or report["ioc_strings"]["domains"]:
                 warnings.append("Potential network IOCs (URLs/domains) were detected in the extracted strings.")
 
+            advance(20, "[cyan]Extracting indicators...[/cyan]")
+
         except Exception as e:
             warnings.append(f"String extraction error: {str(e)}")
+            advance(20, "[yellow]String extraction skipped[/yellow]")
             
         # Step 5: VirusTotal check
         if self.query_vt:
             sha256 = report["hashing"].get("sha256")
             if sha256:
                 try:
+                    advance(10, "[cyan]Querying VirusTotal...[/cyan]")
                     vt_res: VTResult = check_hash(sha256, api_key=self.vt_api_key)
                     report["virustotal"] = {
                         "status": "ok",
@@ -234,7 +256,11 @@ class MalwareAnalysisPipeline:
                         "error": str(e)
                     }
                     warnings.append(f"VirusTotal API error: {str(e)}")
-                    
+                finally:
+                    advance(10, "[cyan]Finalizing report...[/cyan]")
+        else:
+            advance(10, "[cyan]Finalizing report...[/cyan]")
+
         # Finalize report
         final_risk_score = 0
         if report.get("api_blacklist_analysis"):
@@ -255,6 +281,9 @@ class MalwareAnalysisPipeline:
         report["overall_summary"]["risk_score"] = final_risk_score
         report["overall_summary"]["verdict"] = verdict
         report["overall_summary"]["warnings"] = warnings
+
+        if progress is not None and task_id is not None:
+            progress.update(task_id, completed=100, description="[green]Analysis complete[/green]")
 
         return report
     
@@ -434,11 +463,20 @@ def main() -> int:
     try:
         pipeline = MalwareAnalysisPipeline(
             file_path=file_path,
-            min_string_len=args.min_len,
+            min_string_len=args.min_min_len if hasattr(args, 'min_min_len') else args.min_len,
             query_vt=args.vt,
             vt_api_key=args.api_key
         )
-        report_data = pipeline.run_analysis()
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TimeElapsedColumn(),
+            console=console,
+            transient=False,
+        ) as progress:
+            report_data = pipeline.run_analysis(progress=progress)
         render_rich_report(report_data)
 
         # Print formatted text report to Console
