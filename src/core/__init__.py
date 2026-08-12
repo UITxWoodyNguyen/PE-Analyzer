@@ -3,12 +3,15 @@
 from src.core.hasher import calculate_hash, HashError
 from src.core.pe_parser import (
     PE_checker, 
+    parse_pe_sections,
     parse_pe_import,
     parse_pe_info,
+    print_sections,
     print_imports,
     ImportedFunction,
     ImportedDLL,
     PEInfo,
+    PESectionInfo,
     PECheckResult,
 )
 from src.core.string_extractor import (
@@ -25,14 +28,18 @@ __all__ = [
     "parse_pe_import",
     "parse_pe_info",
     "print_imports",
+    "print_sections",
     "ImportedFunction",
     "ImportedDLL",
     "PEInfo",
+    "PESectionInfo",
+    "PECheckResult",
     "PE_checker",
-    "PECheckResult"
+    "PECheckResult",
     "ExtractedString",
     "IOCMatch",
     "StringExtractor",
     "extract_strings",
     "extracted_strings",
+    "parse_pe_sections",
 ]
