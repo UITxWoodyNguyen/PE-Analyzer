@@ -50,12 +50,23 @@ def load_blacklist_database(db_path: Optional[Path | str] = None) -> Dict[str, A
     except json.JSONDecodeError as e:
         raise ValueError(f"Error decoding JSON from blacklist database: {e}")
 
+
+def reload_database(db_path: Optional[Path | str] = None) -> Dict[str, APIThreatInfo]:
+    global API_DATABASE, DANGEROUS_APIS_SET
+    API_DATABASE = load_blacklist_database(db_path)
+    DANGEROUS_APIS_SET = set(API_DATABASE.keys())
+    return API_DATABASE
+
 # Merge API name into a Set
 API_DATABASE: Dict[str, APIThreatInfo] = load_blacklist_database()
 DANGEROUS_APIS_SET: Set[str] = set(API_DATABASE.keys())
 
-def is_blacklised_api(api_name: str) -> bool:
+def is_blacklisted_api(api_name: str) -> bool:
     return api_name in DANGEROUS_APIS_SET
+
+# Backward-compatible alias for older imports/tests.
+def is_blacklised_api(api_name: str) -> bool:
+    return is_blacklisted_api(api_name)
 
 def get_api_threat_info(api_name: str) -> Optional[APIThreatInfo]:
     return API_DATABASE.get(api_name, None)
@@ -81,6 +92,10 @@ def inspect_api(api_list: Iterable[str]) -> List[APIThreatInfo]:
 
     found_threats.sort(key=lambda x: severity_order[x.severity])
     return found_threats
+
+def inspect_apis(api_list: Iterable[str]) -> List[APIThreatInfo]:
+    return inspect_api(api_list)
+
 
 def summarize_api_risks (api_list: Iterable[str]) -> Dict[str, Any]:
     # summarize the risk levels of a list of API names

@@ -104,6 +104,7 @@ class PESectionInfo:
     virtual_address_hex: str    # Hexadecimal representation of the virtual address
     virtual_size: int   # Virtual size of the section in memory
     raw_pointer: int    # Pointer to the raw data of the section in the file
+    raw_size: int       # Size of the raw data for this section in the PE file
     entropy: float  # Entropy of the section, indicating randomness (higher values may indicate packed or encrypted data)
     is_readable: bool # Indicates if the section is readable
     is_writable: bool   # Indicates if the section is writable
@@ -326,6 +327,7 @@ def parse_pe_sections (pe: Union[Any, str, Path]) -> List[PESectionInfo]:
                 virtual_address_hex=f"0x{virtual_address:08X}",
                 virtual_size=virtual_size,
                 raw_pointer=raw_pointer,
+                raw_size=raw_size,
                 entropy=entropy,
                 is_readable=is_readable,
                 is_writable=is_writable,

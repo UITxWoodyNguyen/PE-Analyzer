@@ -97,12 +97,16 @@ class MalwareAnalysisPipeline:
                 
                 sections_data = [
                     {
-                        "name": section.name.decode(errors='ignore').rstrip('\x00'),
+                        "name": (
+                            section.name.decode(errors='ignore').rstrip('\x00')
+                            if isinstance(section.name, bytes)
+                            else str(section.name)
+                        ),
                         "virtual_address": hex(section.virtual_address),
                         "virtual_size": section.virtual_size,
-                        "raw_size": section.size_of_raw_data,
+                        "raw_size": getattr(section, "raw_size", 0),
                         "entropy": section.entropy,
-                        "permission": section.permission,
+                        "permissions": section.permissions_str,
                         "is_rwx": section.is_rwx,
                         "is_high_entropy": section.is_suspicious_entropy,
                         "warning": section.packet_warning
@@ -351,6 +355,13 @@ def export_report(report_data: Dict[str, Any], output_path_str: str) -> None:
         print(f"\n[✓] Analysis report successfully exported to Text: {output_path}")
 
 
+def default_output_path(file_path: Path) -> Path:
+    """Return the default location for generated reports under the repository output directory."""
+    output_dir = Path("output").resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return output_dir / f"{file_path.stem}_report.json"
+
+
 # --- CLI PARSER & MAIN ENTRYPOINT ---
 
 def build_cli_parser() -> argparse.ArgumentParser:
@@ -425,9 +436,8 @@ def main() -> int:
         # Print formatted text report to Console
         print(format_text_report(report_data))
 
-        # Export report if -o / --output is specified
-        if args.output:
-            export_report(report_data, args.output)
+        output_target = args.output if args.output else str(default_output_path(file_path))
+        export_report(report_data, output_target)
 
         return 0
 

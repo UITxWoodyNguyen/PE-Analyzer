@@ -118,7 +118,7 @@ def display_sections_table(sections: List[Dict[str, Any]], c: Optional[Console] 
             entropy_styled = f"[green]{entropy_val:.2f}[/green]"
 
         # Tô màu Quyền hạn (Permissions)
-        perms = s.get("permissions", "---")
+        perms = s.get("permissions") or s.get("permission") or "---"
         is_rwx = s.get("is_rwx", False)
         if is_rwx:
             perms_styled = "[bold white on red] RWX [/bold white on red]"
