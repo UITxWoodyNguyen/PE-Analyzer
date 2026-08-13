@@ -105,7 +105,14 @@ git clone https://github.com/your-username/PE-Analyzer.git
 cd PE-Analyzer
 python3 -m venv .venv
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+```
+
+Library Install:
+
+```bash
+pip install pefile
+pip install rich
+pip install requests
 ```
 
 Verify the install:
