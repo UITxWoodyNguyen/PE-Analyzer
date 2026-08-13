@@ -13,6 +13,10 @@
   <b>A static malware analysis and Portable Executable (PE) inspection toolkit for fast, offline binary triage.</b>
 </p>
 
+![Alt](https://repobeats.axiom.co/api/embed/e473fa1c36e4e1b1ef537c50928171b1be15a2ac.svg "Repobeats analytics image")
+
+---
+
 PE Analyzer helps security researchers, malware analysts, and developers quickly assess suspicious Windows executables without executing them. It parses PE headers and sections, surfaces risky imported APIs, extracts network and string-based indicators of compromise (IOCs), computes hashes for correlation, and produces a structured, shareable report — all from the command line.
 
 > ⚠️ **Safety note:** This tool performs *static* analysis only — it never executes the target binary. Even so, always handle unknown or suspicious samples in an isolated environment (VM, sandbox, or air-gapped system) and follow your organization's malware-handling policy.
