@@ -19,12 +19,14 @@ import argparse
 import json
 import os
 import sys
+from unittest import result
 
 # Add project root to sys.path for module imports
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
     
+from src.core.disassembler import DisassemblyError
 from src.core.hasher import calculate_hash, HashError, HashResult
 from src.core.pe_parser import (
     PE_checker,
@@ -39,6 +41,12 @@ from src.utils.blacklist import summarize_api_risks
 from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
 from src.utils.display import render_rich_report, console
+
+'''
+# Disassembler module import
+from src.core.disassembler import disassemble_pe_entry_point
+from src.core.data_structs import DisassemblyConfig
+'''
 
 class MalwareAnalysisPipeline:
     '''
@@ -284,6 +292,15 @@ class MalwareAnalysisPipeline:
 
         if progress is not None and task_id is not None:
             progress.update(task_id, completed=100, description="[green]Analysis complete[/green]")
+        
+        '''    
+        # Disassembly of Entry Point (Optional, if implemented)
+        try:
+            report["pe_analysis"]["entry_point_disassembly"] = result.to_dict()  # Placeholder for disassembly results if implemented
+        except DisassemblyError as e:
+            warnings.append(f"Disassembly error: {str(e)}")
+            report["overall_summary"]["warnings"] = warnings
+        '''
 
         return report
     

@@ -13,6 +13,7 @@ from capstone import (
 )
 
 from src.core.data_structs import Architecture, CodeRegion, DisassemblyConfig, DisassemblyResult, InstructionInfo
+from src.core.mapper import AddressMapper
 
 class DisassemblyError(Exception):
     pass
@@ -107,7 +108,8 @@ def disassemble_pe_entry_point (file_path: str | Path, config: DisassemblyConfig
         
         if section is None:
             raise DisassemblyError("Entry point does not belong to any section")
-        file_offset = pe.get_offset_from_rva(entry_rva)
+        mapper = AddressMapper.from_pe(pe)
+        file_offset = mapper.rva_to_file_offset(entry_rva)
         section_end = section.PointerToRawData + section.SizeOfRawData
         read_end = min(file_offset + config.max_bytes, section_end)
         
@@ -115,7 +117,7 @@ def disassemble_pe_entry_point (file_path: str | Path, config: DisassemblyConfig
         if not code:
             raise DisassemblyError("No code bytes could be read from the entry point")
         
-        section_name = section.Name.decode.rstrip('\x00').decode('utf-8', errors='replace')
+        section_name = section.Name.rstrip(b"\x00").decode("utf-8", errors="replace")
         region = CodeRegion(
             data = code,
             virtual_address = image_base + entry_rva,
