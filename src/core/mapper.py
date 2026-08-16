@@ -3,27 +3,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional
 import pefile
+from src.core.data_structs import SectionRange
 
 class AddressMappingError(Exception):
     pass
-    
-@dataclass(frozen = True, slots = True)
-class SectionRange:
-    name: str
-    virtual_address: int
-    virtual_size: int
-    raw_pointer: int
-    raw_size: int
-    
-    @property
-    def virtual_span(self) -> int:
-        return max(self.virtual_size, self.raw_size)
-    
-    def contains_rva(self, rva: int) -> bool:
-        return self.virtual_address <= rva < self.virtual_address + self.virtual_span
-    
-    def contains_file_offset(self, file_offset: int) -> bool:
-        return self.raw_pointer <= file_offset < self.raw_pointer + self.raw_size
     
 
 class AddressMapper:

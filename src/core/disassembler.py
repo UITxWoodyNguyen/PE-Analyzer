@@ -28,6 +28,8 @@ def disassemble_code (region: CodeRegion, architecture: Architecture, config: Di
     # Create a disassembly engine based on the architecture
     config = config or DisassemblyConfig()
     code = region.data[:config.max_bytes]
+    if not code:
+        raise DisassemblyError("No code bytes were provided for disassembly")
     engine = _create_engine(architecture)
     
     instructions: list[InstructionInfo] = []
