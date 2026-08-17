@@ -107,22 +107,30 @@ Clone the repository:
 ```bash
 git clone https://github.com/your-username/PE-Analyzer.git
 cd PE-Analyzer
-python3 -m venv .venv
-source .venv/bin/activate      # Windows: .venv\Scripts\activate
+python -m venv .venv
 ```
 
-Library Install:
+Activate the virtual environment:
 
 ```bash
-pip install pefile
-pip install rich
-pip install requests
+# Linux / macOS
+source .venv/bin/activate
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+```
+
+Install PE Analyzer in editable mode. This creates the `pe-analyzer` command in the active environment:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -e .
 ```
 
 Verify the install:
 
 ```bash
-python3 src/main.py --help
+pe-analyzer --help
 ```
 
 ---
@@ -132,57 +140,50 @@ python3 src/main.py --help
 Analyze a PE file and display the rich terminal report:
 
 ```bash
-python3 src/main.py -f samples/helloWorld.exe
+pe-analyzer samples/windowsAPI.exe
 ```
 
 Analyze a file and export the report to JSON:
 
 ```bash
-python3 src/main.py -f samples/helloWorld.exe -o output/report.json
+pe-analyzer samples/windowsAPI.exe -o output/report.json
 ```
 
-Export a plain-text report instead:
+Export a text report (any output extension other than `.json` is written as text):
 
 ```bash
-python3 src/main.py -f samples/helloWorld.exe -o output/report.txt --format text
+pe-analyzer samples/windowsAPI.exe -o output/report.txt
 ```
 
 Analyze a file and enable VirusTotal hash reputation checking:
 
 ```bash
-python3 src/main.py -f samples/helloWorld.exe --vt --api-key YOUR_VT_API_KEY
+pe-analyzer samples/windowsAPI.exe --vt --api-key YOUR_VT_API_KEY
 ```
 
-Run a fast metadata-only pass on a large sample:
+Set a higher minimum printable-string length:
 
 ```bash
-python3 src/main.py -f samples/large_binary.exe --fast
-```
-
-Batch-analyze every file in a directory:
-
-```bash
-python3 src/main.py -d samples/ -o output/batch_report.json
+pe-analyzer samples/windowsAPI.exe --min-len 8
 ```
 
 Display help:
 
 ```bash
-python3 src/main.py --help
+pe-analyzer --help
 ```
+
+> `samples/helloWorld.exe` is an ELF sample despite its `.exe` extension. Use `samples/windowsAPI.exe` or another Windows PE file for PE-analysis examples.
 
 ### CLI Reference
 
-| Flag | Description |
+| Argument / flag | Description |
 | --- | --- |
-| `-f, --file` | Path to a single PE file to analyze |
-| `-d, --dir` | Path to a directory of PE files to batch-analyze |
+| `file` | Required positional path to the PE file to analyze |
 | `-o, --output` | Path to write the exported report |
-| `--format` | Report export format: `json` (default) or `text` |
 | `--vt` | Enable VirusTotal hash lookup |
 | `--api-key` | VirusTotal API key (optional override if you do not want to use `.env`) |
-| `--fast` | Metadata-only fast-path parsing, skips deep string extraction |
-| `-v, --verbose` | Enable verbose/debug logging |
+| `--min-len` | Minimum printable string length for string extraction (default: `4`) |
 | `-h, --help` | Show usage information |
 
 ### VirusTotal API Key Setup
@@ -198,7 +199,7 @@ With that file in place, the analyzer loads `VT_API_KEY` automatically when `--v
 Or pass it directly on the command line if you want to override the environment for one run:
 
 ```bash
-python3 src/main.py -f samples/helloWorld.exe --vt --api-key "your_virus_total_api_key_here"
+pe-analyzer samples/windowsAPI.exe --vt --api-key "your_virus_total_api_key_here"
 ```
 
 > If `--vt` is enabled without a valid key, the analyzer will attempt to read `VT_API_KEY` from `.env` first and then from the environment, and may report an auth or network error depending on connectivity.
@@ -223,7 +224,7 @@ Exported JSON reports follow this general shape:
 
 ```json
 {
-  "file": "helloWorld.exe",
+  "file": "windowsAPI.exe",
   "hashes": { "md5": "...", "sha256": "..." },
   "headers": { "machine": "AMD64", "timestamp": "...", "entry_point": "0x1000" },
   "sections": [
@@ -257,6 +258,7 @@ PE-Analyzer/
 ├── tests/                    # Automated tests
 ├── LICENSE                    # Project license
 ├── README.md                  # Project overview and usage
+├── pyproject.toml             # Package metadata and pe-analyzer CLI entry point
 ├── requirements.txt           # Python dependencies
 └── .gitignore                 # Git ignore rules
 ```
@@ -276,14 +278,14 @@ With that file in the project root, the analyzer will load the key automatically
 For testing in a local shell, you can still pass the key directly:
 
 ```bash
-python3 src/main.py -f samples/helloWorld.exe --vt --api-key "your_api_key_here"
+pe-analyzer samples/windowsAPI.exe --vt --api-key "your_api_key_here"
 ```
 
 If you prefer shell environment variables, that still works too:
 
 ```bash
 export VT_API_KEY="your_api_key_here"
-python3 src/main.py -f samples/helloWorld.exe --vt
+pe-analyzer samples/windowsAPI.exe --vt
 ```
 
 The blacklist of risky Windows APIs used for import scoring lives in `src/utils/` and can be extended with additional entries as needed.
