@@ -40,7 +40,7 @@ from src.services.vt_checker import check_hash, VTErrors, VTNotFoundErrors, VTRe
 from src.utils.blacklist import summarize_api_risks
 from rich.progress import BarColumn, Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
-from src.utils.display import render_rich_report, console
+from src.utils.display import render_rich_report, render_banner, console
 
 '''
 # Disassembler module import
@@ -426,24 +426,24 @@ def default_output_path(file_path: Path) -> Path:
 def build_cli_parser() -> argparse.ArgumentParser:
     """Construct the English CLI parser using argparse."""
     parser = argparse.ArgumentParser(
-        prog="python -m src.main",
+        prog="pe-analyzer",
         description="Static Malware & PE Binary Analysis Framework.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Usage Examples:
-  python src/main.py -f samples/bin/malware_simulator_x64.exe
-  python src/main.py -f samples/bin/malware_simulator_x64.exe -o report.json
-  python src/main.py -f samples/bin/malware_simulator_x64.exe -o report.txt --vt
+  pe-analyzer samples/windowsAPI.exe
+  pe-analyzer samples/windowsAPI.exe -o output/report.json
+  pe-analyzer samples/windowsAPI.exe --vt
         """
     )
 
     # Required file argument
     parser.add_argument(
-        "-f", "--file",
-        required=True,
-        help="Path to the binary file to analyze (.exe, .dll, .bin, .sys, etc.)"
+        "file",
+        type=Path,
+        help="Path to the PE file to analyze",
     )
-
+    
     # Output report destination
     parser.add_argument(
         "-o", "--output",
@@ -477,10 +477,13 @@ def main() -> int:
     parser = build_cli_parser()
     args = parser.parse_args()
 
-    file_path = Path(args.file)
+    file_path = args.file
+    
     if not file_path.exists():
         print(f"[-] Error: Target file '{args.file}' does not exist.", file=sys.stderr)
         return 1
+    
+    render_banner(console)
 
     try:
         pipeline = MalwareAnalysisPipeline(

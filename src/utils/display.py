@@ -19,13 +19,26 @@ console = Console()
 
 
 def render_banner(c: Optional[Console] = None) -> None:
-    """Display the welcome banner of the malware analysis system."""
     out = c or console
-    banner_text = (
-        "[bold cyan]STATIC MALWARE & PE BINARY ANALYSIS FRAMEWORK[/bold cyan]\n"
-        "[dim]Automated Static Analysis, Threat Intelligence & Heuristics Engine[/dim]"
+
+    banner = r"""
+ ██████╗ ███████╗     █████╗ ███╗   ██╗ █████╗ ██╗  ██╗   ██╗███████╗███████╗██████╗
+ ██╔══██╗██╔════╝    ██╔══██╗████╗  ██║██╔══██╗██║  ╚██╗ ██╔╝╚══███╔╝██╔════╝██╔══██╗
+ ██████╔╝█████╗█████╗███████║██╔██╗ ██║███████║██║   ╚████╔╝   ███╔╝ █████╗  ██████╔╝
+ ██╔═══╝ ██╔══╝╚════╝██╔══██║██║╚██╗██║██╔══██║██║    ╚██╔╝   ███╔╝  ██╔══╝  ██╔══██╗
+ ██║     ███████╗    ██║  ██║██║ ╚████║██║  ██║███████╗██║   ███████╗███████╗██║  ██║
+ ╚═╝     ╚══════╝    ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝╚═╝   ╚══════╝╚══════╝╚═╝  ╚═╝
+    """
+
+    out.print(
+        Panel(
+            f"[bold cyan]{banner}[/bold cyan]\n"
+            "[bold white]Static Malware & PE Binary Analysis Framework[/bold white]\n"
+            "[dim]Offline PE triage • Import analysis • IOC extraction[/dim]",
+            border_style="bright_blue",
+            padding=(1, 2),
+        )
     )
-    out.print(Panel(banner_text, border_style="bold blue", expand=False, padding=(1, 2)))
 
 
 def display_file_summary(report: Dict[str, Any], c: Optional[Console] = None) -> None:
@@ -350,7 +363,6 @@ def display_overall_verdict(summary: Dict[str, Any], c: Optional[Console] = None
 def render_rich_report(report: Dict[str, Any], c: Optional[Console] = None) -> None:
     """This function orchestrates the rendering of the complete Rich report, including all sections."""
     out = c or console
-    render_banner(out)
     display_file_summary(report, out)
 
     pe_data = report.get("pe_analysis")

@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pe-analyzer"
+version = "0.1.0"
+description = "Static Portable Executable analysis toolkit"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+dependencies = [
+    "pefile==2024.8.26",
+    "rich==15.0.0",
+    "requests>=2.31,<3",
+    "capstone==6.0.0a7",
+]
+
+[project.scripts]
+pe-analyzer = "src.main:main"
+
+[tool.setuptools.packages.find]
+include = ["src*"]
+
+[tool.setuptools.package-data]
+"src.utils" = ["api_blacklist.json"]
